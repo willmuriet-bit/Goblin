@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3 CAPTEURS INDÉPENDANTS - Gamma + Alpha</title>
+    <title>CAPTEURS - VERSION FINALE</title>
     <style>
         body {
             margin: 0;
@@ -32,7 +32,6 @@
             left: 0;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s;
         }
 
         .my-image.show {
@@ -43,12 +42,12 @@
         button {
             display: block;
             margin: 8px auto;
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 18px;
             border: none;
             border-radius: 25px;
-            cursor: pointer;            font-weight: bold;
-            width: 100%;
+            cursor: pointer;
+            font-weight: bold;            width: 100%;
             max-width: 300px;
         }
 
@@ -57,72 +56,54 @@
             color: white;
         }
 
-        .test-btn {
-            background-color: #28a745;
-            color: white;
-        }
+        .btn-a { background-color: #0066ff; color: white; }
+        .btn-b { background-color: #00aa44; color: white; }
+        .btn-c { background-color: #ff4444; color: white; }
+        .btn-d { background-color: #ffcc00; color: black; }
+        .btn-e { background-color: #aa44ff; color: white; }
 
-        .test-btn:disabled {
+        button:disabled {
             background-color: #555;
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        .sensors-container {
+        .sensors {
             display: flex;
             justify-content: space-around;
-            margin: 15px 0;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin: 20px 0;
         }
 
         .sensor-box {
             background-color: #333;
-            border-radius: 10px;
             padding: 15px;
-            min-width: 100px;
+            border-radius: 10px;
             text-align: center;
-            border: 2px solid #555;
+            min-width: 100px;
         }
 
-        .sensor-box.active {
-            border-color: #00ff00;
-            background-color: #1a3a1a;
-        }
-
-        .sensor-title {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .sensor-value {            font-size: 28px;
+        .sensor-value {
+            font-size: 32px;
             font-weight: bold;
             font-family: monospace;
         }
 
-        .gamma-value { color: #ff6b6b; }
-        .alpha-value { color: #4ecdc4; }
+        .gamma { color: #ff6b6b; }
+        .alpha { color: #4ecdc4; }
 
         #status {
             background-color: #1a4a1a;
             border: 2px solid #00ff00;
             padding: 15px;
             border-radius: 10px;
-            margin: 15px 0;
-            text-align: center;
-            font-size: 16px;
+            margin: 15px 0;            text-align: center;
+            font-size: 18px;
             font-weight: bold;
         }
 
         #status.locked {
             background-color: #4a1a1a;
             border-color: #ff0000;
-        }
-
-        #status.counting {
-            background-color: #1a3a4a;
-            border-color: #00ffff;
         }
 
         .thresholds {
@@ -134,342 +115,195 @@
             text-align: center;
         }
 
-        .thresholds h3 {
-            margin: 0 0 10px 0;
-            color: #dd88ff;
-        }
-
-        .threshold-item {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-
         #debug {
-            background-color: #000;            padding: 15px;
+            background-color: #000;
+            padding: 15px;
             border-radius: 10px;
             font-family: monospace;
-            font-size: 11px;
+            font-size: 12px;
             margin-top: 20px;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
-        .log {
-            margin: 3px 0;
-            padding: 2px;
-            border-left: 2px solid #555;
-            padding-left: 8px;
-        }
-
-        .log-error { color: #ff0000; border-left-color: #ff0000; }
-        .log-success { color: #00ff00; border-left-color: #00ff00; }
-        .log-warning { color: #ffaa00; border-left-color: #ffaa00; }
-        .log-info { color: #00ffff; border-left-color: #00ffff; }
-
-        .sensor-test {
-            background-color: #1a2a3a;
-            border: 2px solid #0088ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-        }
-
-        .sensor-test h3 {
-            margin: 0 0 10px 0;
-            color: #00aaff;
-        }
-
-        .check-item {
-            margin: 5px 0;
-            padding: 5px;
-            background-color: #0a1a2a;
-            border-radius: 5px;
-        }
-
-        .check-ok { color: #00ff00; }
-        .check-fail { color: #ff0000; }
-        .check-wait { color: #ffaa00; }
+        .log { margin: 3px 0; }
+        .ok { color: #00ff00; }
+        .err { color: #ff0000; }
+        .warn { color: #ffaa00; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center; color: #00aaff;">🎯 3 CAPTEURS INDÉPENDANTS</h2>
-    <div id="status">👆 Clique sur "ACTIVER CAPTEURS"</div>
+    <h2 style="text-align: center;">🎯 CAPTEURS</h2>
+
+    <div id="status">👆 Clique "ACTIVER CAPTEURS"</div>
 
     <div class="thresholds">
-        <h3>📊 SEUILS DE DÉCLENCHEMENT</h3>
-        <div class="threshold-item">📐 <strong>GAMMA GAUCHE:</strong> -15° → Image B 🟢</div>
-        <div class="threshold-item">📐 <strong>GAMMA DROITE:</strong> +15° → Image C 🔴</div>
-        <div class="threshold-item">🧭 <strong>ALPHA POSITIF:</strong> +20° → Image D 🟡</div>
-        <div class="threshold-item">🧭 <strong>ALPHA NÉGATIF:</strong> -20° → Image E 🟣</div>
+        <strong>SEUILS:</strong><br>
+        Gamma -15° → B | Gamma +15° → C<br>
+        Alpha +20° → D | Alpha -20° → E
     </div>
 
-    <div class="sensor-test">
-        <h3>🔍 TEST DES CAPTEURS</h3>
-        <div class="check-item" id="test-gamma">⏳ Gamma: En attente...</div>
-        <div class="check-item" id="test-alpha">⏳ Alpha: En attente...</div>
-        <div class="check-item" id="test-working">⏳ Capteurs fonctionnels: 0/2</div>
-    </div>
-
-    <button id="btn-permission">🔓 ACTIVER CAPTEURS</button>
-
+    <button id="btn-permission" onclick="activate()">🔓 ACTIVER CAPTEURS</button>
     <div id="image-container">
-        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
-        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
-        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="C">
-        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="D">
-        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300" alt="E">
+        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300">
+        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300">
+        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300">
+        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300">
+        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300">
     </div>
 
-    <div class="sensors-container">
-        <div class="sensor-box" id="gamma-box">
-            <div class="sensor-title">📐 GAMMA</div>
-            <div id="gamma-value" class="sensor-value gamma-value">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Gauche/Droite</div>
+    <div class="sensors">
+        <div class="sensor-box">
+            <div>GAMMA</div>
+            <div id="gamma" class="sensor-value gamma">0°</div>
         </div>
-        <div class="sensor-box" id="alpha-box">
-            <div class="sensor-title">🧭 ALPHA</div>
-            <div id="alpha-value" class="sensor-value alpha-value">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Rotation</div>
+        <div class="sensor-box">
+            <div>ALPHA</div>
+            <div id="alpha" class="sensor-value alpha">0°</div>
         </div>
     </div>
 
-    <button class="test-btn" id="btn-a" onclick="setImg('A')">🔵 Image A (Centre)</button>
-    <button class="test-btn" id="btn-b" onclick="setImg('B')">🟢 Image B (Gamma -15°)</button>
-    <button class="test-btn" id="btn-c" onclick="setImg('C')">🔴 Image C (Gamma +15°)</button>
-    <button class="test-btn" id="btn-d" onclick="setImg('D')">🟡 Image D (Alpha +20°)</button>
-    <button class="test-btn" id="btn-e" onclick="setImg('E')">🟣 Image E (Alpha -20°)</button>
+    <button class="btn-a" onclick="showImg('A')">🔵 A</button>
+    <button class="btn-b" onclick="showImg('B')">🟢 B</button>
+    <button class="btn-c" onclick="showImg('C')">🔴 C</button>
+    <button class="btn-d" onclick="showImg('D')">🟡 D</button>
+    <button class="btn-e" onclick="showImg('E')">🟣 E</button>
 
     <div id="debug"></div>
 
     <script>
-        let locked = false;        let sensorsReady = false;
-        let gammaRef = 0;
-        let alphaRef = 0;
-        let gammaWorking = false;
-        let alphaWorking = false;
-        let eventCount = 0;
+        var locked = false;
+        var ready = false;
+        var gammaRef = 0;
+        var alphaRef = 0;
 
-        // SEUILS
-        const GAMMA_LEFT = -15;
-        const GAMMA_RIGHT = 15;
-        const ALPHA_POS = 20;
-        const ALPHA_NEG = -20;
-
-        function log(msg, type = 'info') {
-            const d = document.getElementById('debug');
-            const entry = document.createElement('div');
-            entry.className = 'log log-' + type;
-            const time = new Date().toLocaleTimeString();
-            entry.textContent = `[${time}] ${msg}`;
-            d.insertBefore(entry, d.firstChild);
-            while (d.children.length > 25) d.removeChild(d.lastChild);
+        function log(msg, cls) {
+            var d = document.getElementById('debug');
+            var e = document.createElement('div');
+            e.className = 'log ' + (cls || '');
+            e.textContent = msg;
+            d.insertBefore(e, d.firstChild);
         }
 
-        function showImage(letter) {
-            ['a','b','c','d','e'].forEach(id => {
-                document.getElementById('img-' + id).classList.remove('show');
-            });
-            document.getElementById('img-' + letter.toLowerCase()).classList.add('show');
-        }
-
-        function setImg(letter) {
+        function showImg(letter) {
             if (locked) {
-                log('🔒 DÉJÀ VERROUILLÉ!', 'error');
+                log('🔒 VERROUILLÉ!', 'err');
                 return;
             }
-            log(`👤 Manuel: Image ${letter}`, 'info');
-            showImage(letter);
-            lockAll();
-        }
-
-        function lockAll() {
+            log('👤 Image: ' + letter, 'ok');
+            
+            // Cacher toutes les images
+            document.getElementById('img-a').classList.remove('show');            document.getElementById('img-b').classList.remove('show');
+            document.getElementById('img-c').classList.remove('show');
+            document.getElementById('img-d').classList.remove('show');
+            document.getElementById('img-e').classList.remove('show');
+            
+            // Afficher la bonne
+            document.getElementById('img-' + letter.toLowerCase()).classList.add('show');
+            
+            // Verrouiller
             locked = true;
-            const status = document.getElementById('status');
-            status.textContent = '🔒 VERROUILLÉ - IMAGE FIXE';
-            status.classList.add('locked');
-            status.classList.remove('counting');
+            document.getElementById('status').textContent = '🔒 VERROUILLÉ';
+            document.getElementById('status').classList.add('locked');
             document.getElementById('btn-permission').style.display = 'none';
-            document.querySelectorAll('.test-btn').forEach(b => b.disabled = true);
-            log('🔒 VERROUILLAGE PERMANENT ACTIVÉ', 'success');
-        }
-        function updateSensorTest(sensor, working) {
-            if (sensor === 'gamma') {
-                gammaWorking = working;
-                document.getElementById('test-gamma').className = 'check-item ' + (working ? 'check-ok' : 'check-fail');
-                document.getElementById('test-gamma').textContent = (working ? '✅' : '❌') + ' Gamma: ' + (working ? 'FONCTIONNE' : 'NE RÉPOND PAS');
+            
+            var btns = document.querySelectorAll('button');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].disabled = true;
             }
-            if (sensor === 'alpha') {
-                alphaWorking = working;
-                document.getElementById('test-alpha').className = 'check-item ' + (working ? 'check-ok' : 'check-fail');
-                document.getElementById('test-alpha').textContent = (working ? '✅' : '❌') + ' Alpha: ' + (working ? 'FONCTIONNE' : 'NE RÉPOND PAS');
-            }
-            const count = (gammaWorking ? 1 : 0) + (alphaWorking ? 1 : 0);
-            document.getElementById('test-working').textContent = `📊 Capteurs fonctionnels: ${count}/2`;
-            document.getElementById('test-working').className = 'check-item ' + (count >= 1 ? 'check-ok' : 'check-wait');
+            
+            log('🔒 VERROUILLAGE ACTIVÉ', 'ok');
         }
 
-        async function activateSensors() {
-            const status = document.getElementById('status');
-            status.textContent = '🔑 Demande de permission...';
-            status.classList.add('counting');
-            log('🔑 Demande permission...', 'warning');
-
-            let permissionGranted = false;
-
+        async function activate() {
+            log('🔑 Permission...', 'warn');
+            
+            var granted = false;
+            
             if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    if (response === 'granted') {
-                        permissionGranted = true;
-                        log('✅ Permission accordée', 'success');
-                    } else {
-                        log('❌ Permission refusée', 'error');
-                        status.textContent = '❌ Permission refusée';
-                        return;
-                    }
+                    var response = await DeviceOrientationEvent.requestPermission();
+                    granted = (response === 'granted');
                 } catch (e) {
-                    log('❌ Erreur: ' + e.message, 'error');
-                    status.textContent = '❌ Erreur: ' + e.message;
+                    log('❌ ' + e.message, 'err');
                     return;
                 }
             } else {
-                permissionGranted = true;
-                log('✅ Android - pas de permission requise', 'success');
+                granted = true;
             }
-
-            if (!permissionGranted) return;
-
-            document.getElementById('btn-permission').style.display = 'none';            showImage('A');
-
-            // COMPTE À REBOURS 4 SECONDES
-            let seconds = 4;
-            status.textContent = `⏳ ${seconds}s... (reste immobile)`;
             
-            const countdownInterval = setInterval(() => {
-                seconds--;
-                if (seconds > 0) {
-                    status.textContent = `⏳ ${seconds}s... (reste immobile)`;
-                } else {
-                    clearInterval(countdownInterval);
-                    sensorsReady = true;
-                    status.textContent = '🎯 BOUGE TON TÉLÉPHONE!';
-                    status.classList.remove('counting');
-                    log('✅ CAPTEURS ACTIFS!', 'success');
+            if (!granted) {
+                log('❌ Permission refusée', 'err');
+                return;
+            }
+            
+            log('✅ Permission accordée', 'ok');
+            document.getElementById('btn-permission').style.display = 'none';
+            showImg('A');
+            
+            // Déverrouiller pour les capteurs après 4s            setTimeout(function() {
+                locked = false;
+                ready = true;
+                document.getElementById('status').textContent = '🎯 BOUGE TON TÉLÉPHONE!';
+                document.getElementById('status').classList.remove('locked');
+                
+                // Réactiver les boutons
+                var btns = document.querySelectorAll('button');
+                for (var i = 0; i < btns.length; i++) {
+                    btns[i].disabled = false;
                 }
-            }, 1000);
-
-            // ÉCOUTEUR DEVICEORIENTATION
+                document.getElementById('btn-permission').style.display = 'block';
+                
+                log('✅ CAPTEURS ACTIFS!', 'ok');
+            }, 4000);
+            
+            log('⏳ Attente 4s...', 'warn');
+            
+            // Écouteur capteurs
             window.addEventListener('deviceorientation', function(event) {
-                eventCount++;
-
-                // Si verrouillé, on sort IMMÉDIATEMENT
-                if (locked) return;
-
-                // Si pas encore prêt (pendant les 4s), on sort
-                if (!sensorsReady) return;
-
-                // === RÉCUPÉRATION DES VALEURS ===
-                let gamma = event.gamma;
-                let alpha = event.alpha;
-
-                // Gérer les valeurs null
-                if (gamma === null || gamma === undefined) gamma = 0;
-                if (alpha === null || alpha === undefined) alpha = 0;
-
-                // === NORMALISATION ===
-                // Gamma: -90 à +90
-                if (gamma > 90) gamma = 90;
-                if (gamma < -90) gamma = -90;
-
-                // Alpha: 0 à 360 → convertir en -180 à +180
+                if (!ready || locked) return;
+                
+                var gamma = event.gamma || 0;
+                var alpha = event.alpha || 0;
+                
+                // Normaliser alpha
                 if (alpha > 180) alpha = alpha - 360;
-
-                // === AFFICHAGE ===
-                document.getElementById('gamma-value').textContent = Math.round(gamma) + '°';
-                document.getElementById('alpha-value').textContent = Math.round(alpha) + '°';
-
-                // === TEST SI CAPTEURS FONCTIONNENT ===                if (eventCount === 20) {
-                    if (Math.abs(gamma) > 2) {
-                        updateSensorTest('gamma', true);
-                        log('✅ Gamma détecte des mouvements', 'success');
-                    } else {
-                        updateSensorTest('gamma', false);
-                        log('⚠️ Gamma ne détecte pas de mouvements', 'warning');
-                    }
-                    if (Math.abs(alpha) > 2) {
-                        updateSensorTest('alpha', true);
-                        log('✅ Alpha détecte des mouvements', 'success');
-                    } else {
-                        updateSensorTest('alpha', false);
-                        log('⚠️ Alpha ne détecte pas de mouvements', 'warning');
-                    }
+                
+                // Afficher
+                document.getElementById('gamma').textContent = Math.round(gamma) + '°';
+                document.getElementById('alpha').textContent = Math.round(alpha) + '°';
+                
+                // Calcul relatif
+                var gammaRel = gamma - gammaRef;
+                var alphaRel = alpha - alphaRef;
+                
+                // Vérifier seuils
+                var newImg = null;
+                
+                if (gammaRel < -15) {
+                    newImg = 'B';
+                    log('✅ Gamma -15° → B', 'ok');
+                } else if (gammaRel > 15) {
+                    newImg = 'C';
+                    log('✅ Gamma +15° → C', 'ok');
+                } else if (alphaRel > 20) {
+                    newImg = 'D';
+                    log('✅ Alpha +20° → D', 'ok');
+                } else if (alphaRel < -20) {
+                    newImg = 'E';                    log('✅ Alpha -20° → E', 'ok');
                 }
-
-                // === CALCUL RELATIF ===
-                let gammaRel = gamma - gammaRef;
-                let alphaRel = alpha - alphaRef;
-
-                // Normaliser alpha relatif
-                if (alphaRel > 180) alphaRel = alphaRel - 360;
-                if (alphaRel < -180) alphaRel = alphaRel + 360;
-
-                // === LOG PÉRIODIQUE (pour ne pas spammer) ===
-                if (eventCount % 10 === 0) {
-                    log(`📊 Gamma: ${Math.round(gammaRel)}° | Alpha: ${Math.round(alphaRel)}°`, 'info');
+                
+                if (newImg) {
+                    showImg(newImg);
                 }
-
-                // === VÉRIFICATION DES SEUILS ===
-                let newImage = null;
-                let reason = '';
-
-                // Gamma Gauche
-                if (gammaRel < GAMMA_LEFT) {
-                    newImage = 'B';
-                    reason = `Gamma Gauche (${Math.round(gammaRel)}° < ${GAMMA_LEFT}°)`;
-                }
-                // Gamma Droite
-                else if (gammaRel > GAMMA_RIGHT) {
-                    newImage = 'C';
-                    reason = `Gamma Droite (${Math.round(gammaRel)}° > ${GAMMA_RIGHT}°)`;
-                }
-                // Alpha Positif
-                else if (alphaRel > ALPHA_POS) {
-                    newImage = 'D';
-                    reason = `Alpha Positif (${Math.round(alphaRel)}° > ${ALPHA_POS}°)`;
-                }
-                // Alpha Négatif                else if (alphaRel < ALPHA_NEG) {
-                    newImage = 'E';
-                    reason = `Alpha Négatif (${Math.round(alphaRel)}° < ${ALPHA_NEG}°)`;
-                }
-
-                // === CHANGEMENT D'IMAGE ===
-                if (newImage) {
-                    log(`✅ SEUIL ATTEINT! ${reason}`, 'success');
-                    log(`🖼️ CHANGEMENT: A → ${newImage}`, 'success');
-                    showImage(newImage);
-                    lockAll();
-                }
-
-            }, true);
-
-            log('✅ Écouteur deviceorientation activé', 'success');
-            log('📱 Bouge ton téléphone pour tester les capteurs', 'info');
+            });
+            
+            log('✅ Écouteur activé', 'ok');
         }
 
-        // Initialisation
-        document.getElementById('btn-permission').addEventListener('click', function() {
-            // Capturer les références AVANT le compte à rebours
-            gammaRef = 0;
-            alphaRef = 0;
-            log(`📐 Références: Gamma=${gammaRef}° | Alpha=${alphaRef}°`, 'info');
-            activateSensors();
-        });
-
-        log('📱 Page chargée', 'info');
-        log('🔒 Protocol: ' + window.location.protocol, 'warning');
-        log('📱 User Agent: ' + navigator.userAgent.substring(0, 40) + '...', 'info');
+        log('📱 Page chargée', 'warn');
     </script>
 </body>
 </html>
