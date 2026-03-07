@@ -2,34 +2,33 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Magique</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Test Capteurs</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #222;
+            padding: 20px;
+            background-color: #1a1a1a;
             color: white;
-            font-family: sans-serif;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
             flex-direction: column;
+            align-items: center;
         }
 
         #image-container {
-            width: 300px;
-            height: 300px;
-            border-radius: 20px;
+            width: 280px;
+            height: 280px;
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(255,255,255,0.2);
             background-color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: transform 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         img {
@@ -43,122 +42,165 @@
             display: block;
         }
 
-        #info {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 1.2rem;
-        }
         #permission-btn {
-            margin-top: 20px;
-            padding: 15px 30px;
+            /* MODIFICATIONS IMPORTANTES POUR RENDRE LE BOUTON CLIQUABLE */
+            position: relative;
+            z-index: 9999;
+            pointer-events: auto !important;
+                        padding: 20px 40px;
             background-color: #007bff;
             color: white;
             border: none;
             border-radius: 50px;
-            font-size: 1rem;
+            font-size: 18px;
+            font-weight: bold;
             cursor: pointer;
-            /* MODIFICATION ICI : le bouton est visible par défaut */
-            display: block;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
-        
-        .status {
-            font-size: 0.8rem;
-            color: #aaa;
+
+        #permission-btn:active {
+            background-color: #0056b3;
+            transform: scale(0.95);
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #333;
+            border-radius: 10px;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        #debug {
             margin-top: 10px;
+            font-size: 12px;
+            color: #00ff00;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
 
     <div id="image-container">
-        <!-- Remplace les src par tes propres images -->
-        <img id="img-a" src="https://picsum.photos/300/300?random=1" class="active" alt="Image A">
-        <img id="img-b" src="https://picsum.photos/300/300?random=2" alt="Image B">
-        <img id="img-c" src="https://picsum.photos/300/300?random=3" alt="Image C">
+        <img id="img-a" src="https://picsum.photos/300/300?random=1" class="active">
+        <img id="img-b" src="https://picsum.photos/300/300?random=2">
+        <img id="img-c" src="https://picsum.photos/300/300?random=3">
     </div>
 
-    <div id="info">
-        Pose ton téléphone à plat et tourne-le !<br>
-        <span id="angle-display">Angle: 0°</span>
+    <button id="permission-btn">🔓 ACTIVER LES CAPTEURS</button>
+    
+    <div id="status">
+        <div>Statut: En attente...</div>
+        <div id="debug">Alpha: - | Beta: - | Gamma: -</div>
     </div>
-
-    <button id="permission-btn">🔓 Activer les capteurs de mouvement</button>
-    <div class="status" id="status-msg">Clique sur le bouton pour commencer</div>
-
     <script>
+        console.log("📱 Script chargé avec succès!");
+        
         const btn = document.getElementById('permission-btn');
-        const statusMsg = document.getElementById('status-msg');
-        const angleDisplay = document.getElementById('angle-display');
+        const statusDiv = document.querySelector('#status div');
+        const debugDiv = document.getElementById('debug');
         
         const imgA = document.getElementById('img-a');
         const imgB = document.getElementById('img-b');
         const imgC = document.getElementById('img-c');
 
-        let permissionGranted = false;
+        // TEST 1: Vérifier si le bouton existe
+        console.log("Bouton trouvé:", btn);
 
-        // Fonction pour demander la permission        async function requestPermission() {
-            // iOS 13+
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    if (response === 'granted') {
-                        permissionGranted = true;
-                        startListening();
-                    } else {
-                        statusMsg.innerText = "❌ Permission refusée";
-                        alert("Permission refusée. La page ne fonctionnera pas.");
+        // TEST 2: Ajouter un écouteur d'événement
+        btn.addEventListener('click', function(e) {
+            console.log("✅ BOUTON CLIQUÉ!");
+            e.preventDefault();
+            e.stopPropagation();
+            
+            statusDiv.textContent = "🔄 Demande de permission...";
+            statusDiv.style.color = "#ffff00";
+            
+            requestPermission();
+        });
+
+        // Empêcher le comportement par défaut sur tactile
+        btn.addEventListener('touchstart', function(e) {
+            console.log("👆 Touch start détecté");
+        });
+
+        async function requestPermission() {
+            console.log("🔑 Fonction requestPermission appelée");
+            
+            // Vérifier si l'API existe
+            if (typeof DeviceOrientationEvent !== 'undefined') {
+                console.log("✅ DeviceOrientationEvent disponible");
+                
+                // iOS 13+
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    console.log("📱 iOS détecté - demande de permission");
+                    try {
+                        const permission = await DeviceOrientationEvent.requestPermission();
+                        console.log("Permission réponse:", permission);
+                        
+                        if (permission === 'granted') {
+                            console.log("✅ Permission accordée!");
+                            startSensors();
+                        } else {                            console.log("❌ Permission refusée");
+                            statusDiv.textContent = "❌ Permission refusée";
+                            statusDiv.style.color = "#ff0000";
+                        }
+                    } catch (error) {
+                        console.error("Erreur:", error);
+                        statusDiv.textContent = "❌ Erreur: " + error.message;
+                        statusDiv.style.color = "#ff0000";
                     }
-                } catch (error) {
-                    console.error(error);
-                    statusMsg.innerText = "❌ Erreur: " + error;
+                } else {
+                    // Android
+                    console.log("🤖 Android détecté - pas de permission nécessaire");
+                    startSensors();
                 }
             } else {
-                // Android et autres navigateurs
-                permissionGranted = true;
-                startListening();
+                console.log("❌ DeviceOrientationEvent NON disponible");
+                statusDiv.textContent = "❌ Capteurs non supportés";
+                statusDiv.style.color = "#ff0000";
             }
         }
 
-        btn.addEventListener('click', requestPermission);
-
-        function startListening() {
+        function startSensors() {
+            console.log("🎯 Démarrage des capteurs...");
+            statusDiv.textContent = "✅ Capteurs actifs!";
+            statusDiv.style.color = "#00ff00";
             btn.style.display = 'none';
-            statusMsg.innerText = "✅ Capteurs actifs ! Pose ton téléphone à plat.";
+            
             window.addEventListener('deviceorientation', handleOrientation);
         }
 
         function handleOrientation(event) {
-            let alpha = event.alpha;
-            let beta = event.beta;
-            let gamma = event.gamma;
-
-            // Affichage de debug
-            if (alpha !== null) {
-                angleDisplay.innerText = `Alpha: ${Math.round(alpha)}° | Beta: ${Math.round(beta)}°`;
-            }
-
-            // Vérification : téléphone à plat ?
-            if (beta !== null && gamma !== null && Math.abs(beta) < 30 && Math.abs(gamma) < 30) {
+            const alpha = event.alpha || 0;
+            const beta = event.beta || 0;
+            const gamma = event.gamma || 0;
+            
+            debugDiv.textContent = `Alpha: ${Math.round(alpha)}° | Beta: ${Math.round(beta)}° | Gamma: ${Math.round(gamma)}°`;
+            
+            // Si téléphone à plat
+            if (Math.abs(beta) < 30 && Math.abs(gamma) < 30) {
+                let normalizedAlpha = alpha;
+                if (normalizedAlpha > 180) normalizedAlpha -= 360;
                 
-                // Normalisation alpha
-                if (alpha > 180) { alpha = alpha - 360; }
-
-                // Logique de changement
-                if (alpha > -45 && alpha < 45) {
-                    showImage('A');                } else if (alpha <= -45) {
+                if (normalizedAlpha > -45 && normalizedAlpha < 45) {
+                    showImage('A');
+                } else if (normalizedAlpha <= -45) {
                     showImage('B');
-                } else if (alpha >= 45) {
+                } else if (normalizedAlpha >= 45) {
                     showImage('C');
                 }
-
-            }
-        }
+            }        }
 
         function showImage(letter) {
             imgA.classList.remove('active');
             imgB.classList.remove('active');
             imgC.classList.remove('active');
-
+            
             if (letter === 'A') imgA.classList.add('active');
             if (letter === 'B') imgB.classList.add('active');
             if (letter === 'C') imgC.classList.add('active');
