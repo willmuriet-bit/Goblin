@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Gamma + Beta - Version Précise</title>
+    <title>Rotation Gamma + Beta - Version Anti-Saut</title>
     <style>
         body {
             margin: 0;
@@ -250,6 +250,28 @@
             border-radius: 10px;
             font-weight: bold;
         }
+
+        .jump-alert {
+            background-color: #4a1a1a;
+            border: 2px solid #ff0000;
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .jump-alert.visible {
+            display: block;
+            animation: flash 0.5s;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -266,12 +288,11 @@
 
     <div class="info-box">
         📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
-        🎯 Seuil: <strong>25°</strong> | Hystérésis: <strong>10°</strong><br>
+        🎯 Seuil: <strong>25°</strong> | Anti-saut: <strong>ACTIF</strong><br>
         Tient ton téléphone normalement devant toi !
     </div>
 
-    <div id="image-container">
-        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
+    <div id="image-container">        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
         <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
         <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="C">
         <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="D">
@@ -280,6 +301,10 @@
 
     <div class="status-box" id="status-box">
         🎯 État: <span id="main-status">Clique sur "Activer Capteurs"</span>
+    </div>
+
+    <div class="jump-alert" id="jump-alert">
+        ⚠️ SAUT DÉTECTÉ ET CORRIGÉ !
     </div>
 
     <div class="dominant-axis" id="dominant-axis">
@@ -292,6 +317,7 @@
             <div id="stability-fill" class="stability-fill"></div>
         </div>
     </div>
+
     <div class="threshold-indicator">
         <div>ZONES ACTIVES:</div>
         <div class="threshold-bar">
@@ -315,8 +341,7 @@
             <div class="counter-title">📏 BETA (Haut/Bas)</div>
             <div id="beta-value" class="counter-value beta-zero">0°</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
-        </div>
-    </div>
+        </div>    </div>
 
     <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A</button>
     <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B</button>
@@ -331,6 +356,7 @@
         <div class="line">📐 Gamma relatif: <span id="gamma-rel" class="highlight">0°</span></div>
         <div class="line">📏 Beta brut: <span id="beta-raw">-</span>°</div>
         <div class="line">📏 Beta relatif: <span id="beta-rel" class="highlight">0°</span></div>
+        <div class="line">📏 Beta corrigé: <span id="beta-corrected" class="warning">-</span>°</div>
         <div class="line">🖼️ Image actuelle: <span id="current-img" class="highlight">A</span></div>
         <div class="line">🎯 Zone détectée: <span id="detected-zone" class="warning">-</span></div>
         <div class="line">📝 Dernière action: <span id="last-action">-</span></div>
@@ -341,7 +367,8 @@
         let sensorsActive = false;
         let isLocked = false;
         let isPermanentlyLocked = false;
-        let lockTimeout = null;        let countdownInterval = null;
+        let lockTimeout = null;
+        let countdownInterval = null;
         
         // Références
         let gammaRef = 0;
@@ -352,15 +379,18 @@
         let betaHist = [];
         const HIST_SIZE = 5;
         
-        // NOUVEAU: Seuil augmenté à 25° pour plus de précision
-        const THRESHOLD_ENTRY = 25;  // Seuil pour ENTRER dans une zone
-        const THRESHOLD_EXIT = 10;   // Seuil pour SORTIR (hystérésis)
+        // NOUVEAU: Dernière valeur valide pour détecter les sauts
+        let lastValidGamma = 0;
+        let lastValidBeta = 0;
         
-        // NOUVEAU: Temps de stabilité requis (500ms)
+        // Seuil pour détecter un saut anormal (si changement > 100° d'un coup = saut)
+        const JUMP_THRESHOLD = 100;
+        
+        const THRESHOLD_ENTRY = 25;
+        const THRESHOLD_EXIT = 10;
         const STABILITY_TIME = 500;
         let stabilityTimer = null;
-        let stableStartTime = 0;
-        let pendingZone = null;
+        let stableStartTime = 0;        let pendingZone = null;
         
         const LOCK_DURATION = 4000;
 
@@ -371,7 +401,54 @@
             return hist.reduce((a, b) => a + b, 0) / hist.length;
         }
 
-        // NOUVEAU: Détection de l'axe dominant
+        // NOUVELLE FONCTION: Corriger les sauts de Beta
+        function correctJump(currentValue, lastValue, axis) {
+            const diff = Math.abs(currentValue - lastValue);
+            
+            // Si le changement est trop brusque (> 100°), c'est un saut
+            if (diff > JUMP_THRESHOLD) {
+                console.warn(`⚠️ SAUT DÉTECTÉ sur ${axis}: ${lastValue}° → ${currentValue}° (diff: ${diff}°)`);
+                
+                // Afficher l'alerte
+                const alertEl = document.getElementById('jump-alert');
+                alertEl.classList.add('visible');
+                setTimeout(() => alertEl.classList.remove('visible'), 1000);
+                
+                // Corriger la valeur en la ramenant proche de la dernière valeur valide
+                // On garde le signe mais on limite le changement
+                let correctedValue = lastValue;
+                
+                // Si la nouvelle valeur est > 270°, c'est probablement un wrap de -90°
+                if (currentValue > 270) {
+                    correctedValue = currentValue - 360;
+                    console.log(`✅ Correction: ${currentValue}° → ${correctedValue}°`);
+                }
+                // Si la nouvelle valeur est < -270°, c'est probablement un wrap de +90°
+                else if (currentValue < -270) {
+                    correctedValue = currentValue + 360;
+                    console.log(`✅ Correction: ${currentValue}° → ${correctedValue}°`);
+                }
+                // Sinon, on garde simplement la dernière valeur valide
+                else {
+                    correctedValue = lastValue;
+                }
+                
+                document.getElementById('beta-corrected').textContent = Math.round(correctedValue);
+                
+                return correctedValue;
+            }
+            
+            // Pas de saut, valeur normale
+            document.getElementById('beta-corrected').textContent = Math.round(currentValue);            return currentValue;
+        }
+
+        // Normaliser une valeur entre -180 et 180
+        function normalizeAngle(angle) {
+            while (angle > 180) angle -= 360;
+            while (angle < -180) angle += 360;
+            return angle;
+        }
+
         function getDominantAxis(gamma, beta) {
             const absGamma = Math.abs(gamma);
             const absBeta = Math.abs(beta);
@@ -390,24 +467,20 @@
             let activeZone = 'a';
             let dominantAxis = 'none';
             
-            // Détection de l'axe dominant            dominantAxis = getDominantAxis(gamma, beta);
+            dominantAxis = getDominantAxis(gamma, beta);
             document.getElementById('axis-name').textContent = dominantAxis === 'gamma' ? 
                 '📐 GAMMA (Gauche/Droite)' : 
                 dominantAxis === 'beta' ? 
                 '📏 BETA (Haut/Bas)' : 
                 'Aucun (Centre)';
             
-            // Utiliser l'axe dominant pour décider
             if (dominantAxis === 'beta') {
-                // BETA prioritaire (haut/bas)
                 if (beta > THRESHOLD_ENTRY) activeZone = 'd';
                 else if (beta < -THRESHOLD_ENTRY) activeZone = 'e';
             } else if (dominantAxis === 'gamma') {
-                // GAMMA prioritaire (gauche/droite)
                 if (gamma > THRESHOLD_ENTRY) activeZone = 'c';
                 else if (gamma < -THRESHOLD_ENTRY) activeZone = 'b';
             }
-            // Sinon rester sur 'a' (centre)
             
             document.getElementById('zone-' + activeZone).classList.add('active');
             document.getElementById('detected-zone').textContent = activeZone.toUpperCase();
@@ -415,8 +488,7 @@
             return activeZone.toUpperCase();
         }
 
-        function updateStability(zone, isStable) {
-            const stabilityFill = document.getElementById('stability-fill');
+        function updateStability(zone, isStable) {            const stabilityFill = document.getElementById('stability-fill');
             const stabilityText = document.getElementById('stability-text');
             
             if (isStable) {
@@ -439,7 +511,8 @@
 
         function lockRotations(temporary = true) {
             isLocked = true;
-            isPermanentlyLocked = !temporary;            
+            isPermanentlyLocked = !temporary;
+            
             const lockIndicator = document.getElementById('lock-indicator');
             lockIndicator.classList.add('active');
             lockIndicator.classList.remove('starting', 'permanent');
@@ -464,8 +537,7 @@
                 countdownEl.textContent = remaining + 's';
                 progressFill.style.width = '100%';
                 
-                if (countdownInterval) clearInterval(countdownInterval);
-                countdownInterval = setInterval(() => {
+                if (countdownInterval) clearInterval(countdownInterval);                countdownInterval = setInterval(() => {
                     remaining -= 0.1;
                     countdownEl.textContent = Math.ceil(remaining) + 's';
                     progressFill.style.width = (remaining / 4 * 100) + '%';
@@ -487,8 +559,8 @@
             isLocked = false;
             isPermanentlyLocked = false;
             
-            // Capturer les références GAMMA + BETA
-            gammaRef = window.lastGamma || 0;            betaRef = window.lastBeta || 0;
+            gammaRef = window.lastGamma || 0;
+            betaRef = window.lastBeta || 0;
             
             console.log('✅ Déverrouillé - GammaRef:', gammaRef, 'BetaRef:', betaRef);
             
@@ -514,8 +586,7 @@
             const el = document.getElementById('gamma-value');
             el.textContent = Math.round(value) + '°';
             el.classList.remove('gamma-positive', 'gamma-negative', 'gamma-zero');
-            if (value > 5) el.classList.add('gamma-positive');
-            else if (value < -5) el.classList.add('gamma-negative');
+            if (value > 5) el.classList.add('gamma-positive');            else if (value < -5) el.classList.add('gamma-negative');
             else el.classList.add('gamma-zero');
         }
 
@@ -537,12 +608,12 @@
             });
             
             const newImg = document.getElementById('img-' + zone.toLowerCase());
-            if (newImg) {                newImg.classList.add('show');
+            if (newImg) {
+                newImg.classList.add('show');
                 document.getElementById('current-img').textContent = zone;
                 updateZones(0, 0);
                 document.getElementById('zone-' + zone.toLowerCase()).classList.add('active');
                 
-                // VERROUILLER PERMANENT
                 lockRotations(false);
             }
         }
@@ -564,13 +635,11 @@
             updateZones(0, 0);
             document.getElementById('zone-' + letter.toLowerCase()).classList.add('active');
             
-            gammaHist = [];
-            betaHist = [];
+            gammaHist = [];            betaHist = [];
             
             lockRotations(true);
         }
 
-        // NOUVELLE FONCTION: Activer et démarrer directement
         async function activateAndStart() {
             if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -578,7 +647,6 @@
                     const response = await DeviceOrientationEvent.requestPermission();
                     if (response === 'granted') {
                         activateSensors();
-                        // Démarrer directement avec Image A
                         setTimeout(() => {
                             manualShow('A');
                         }, 500);
@@ -586,10 +654,10 @@
                         alert('Permission refusée');
                     }
                 } catch (e) {
-                    alert('Erreur: ' + e.message);                }
+                    alert('Erreur: ' + e.message);
+                }
             } else {
                 activateSensors();
-                // Démarrer directement avec Image A
                 setTimeout(() => {
                     manualShow('A');
                 }, 500);
@@ -604,11 +672,24 @@
             document.getElementById('btn-permission').style.display = 'none';
             
             window.addEventListener('deviceorientation', function(event) {
-                window.lastGamma = event.gamma || 0;
-                window.lastBeta = event.beta || 0;
+                let rawGamma = event.gamma || 0;
+                let rawBeta = event.beta || 0;
+                
+                // Normaliser Gamma
+                rawGamma = normalizeAngle(rawGamma);
+                
+                // CORRECTION ANTI-SAUT pour Beta
+                rawBeta = correctJump(rawBeta, lastValidBeta, 'Beta');
+                
+                // Stocker les valeurs brutes (pour affichage)
+                window.lastGamma = rawGamma;
+                window.lastBeta = rawBeta;
+                                // Mettre à jour les dernières valeurs valides
+                lastValidGamma = rawGamma;
+                lastValidBeta = rawBeta;
                 
                 document.getElementById('gamma-raw').textContent = Math.round(window.lastGamma);
-                document.getElementById('beta-raw').textContent = Math.round(window.lastBeta);
+                document.getElementById('beta-raw').textContent = Math.round(rawBeta);
 
                 if (isLocked) {
                     return;
@@ -621,6 +702,10 @@
                 // Calcul relatif
                 let gammaRel = smoothGamma - gammaRef;
                 let betaRel = smoothBeta - betaRef;
+                
+                // Normaliser les valeurs relatives
+                gammaRel = normalizeAngle(gammaRel);
+                betaRel = normalizeAngle(betaRel);
 
                 // Afficher
                 document.getElementById('gamma-rel').textContent = Math.round(gammaRel) + '°';
@@ -628,39 +713,32 @@
                 updateGammaDisplay(gammaRel);
                 updateBetaDisplay(betaRel);
 
-                // Déterminer zone potentielle
                 const potentialZone = updateZones(gammaRel, betaRel);
                 const currentImg = document.getElementById('current-img').textContent;
 
-                // Vérifier si on doit changer
                 if (potentialZone !== currentImg) {
-                    // Nouvelle zone détectée
-                    if (pendingZone !== potentialZone) {                        // Nouvelle zone différente, reset du timer
+                    if (pendingZone !== potentialZone) {
                         pendingZone = potentialZone;
                         stableStartTime = Date.now();
                         console.log('🎯 Nouvelle zone potentielle:', potentialZone);
                     }
                     
-                    // Vérifier la stabilité
                     const elapsed = Date.now() - stableStartTime;
                     document.getElementById('stable-time').textContent = elapsed + 'ms';
                     updateStability(potentialZone, true);
                     
                     if (elapsed >= STABILITY_TIME) {
-                        // Zone stable depuis 500ms, on change!
                         console.log('✅ Zone stable - Changement:', currentImg, '→', potentialZone);
                         changeImage(potentialZone);
                         pendingZone = null;
                     }
                 } else {
-                    // Même zone, reset
-                    pendingZone = null;
-                    updateStability(currentImg, false);
+                    pendingZone = null;                    updateStability(currentImg, false);
                 }
             });
         }
 
-        console.log('📱 Page chargée - Gamma + Beta actifs avec hystérésis!');
+        console.log('📱 Page chargée - Anti-saut Beta activé!');
     </script>
 </body>
 </html>
