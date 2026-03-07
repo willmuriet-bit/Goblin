@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Version Corrigée - Beta + Verrouillage</title>
+    <title>VERSION SIMPLE - CAPTEURS BRUTS</title>
     <style>
         body {
             margin: 0;
@@ -19,7 +19,6 @@
             margin: 20px auto;
             border: 5px solid #00ff00;
             background-color: #333;
-            position: relative;
             border-radius: 15px;
             overflow: hidden;
         }
@@ -32,7 +31,6 @@
             left: 0;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.5s;
         }
 
         .my-image.show {
@@ -42,12 +40,14 @@
 
         button {
             display: block;
-            margin: 8px auto;
-            padding: 12px 24px;
-            font-size: 16px;
+            margin: 10px auto;
+            padding: 15px 30px;
+            font-size: 18px;
             border: none;
             border-radius: 25px;
-            cursor: pointer;            font-weight: bold;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;            max-width: 300px;
         }
 
         #btn-permission {
@@ -58,13 +58,49 @@
         .test-btn {
             background-color: #28a745;
             color: white;
-            margin: 5px auto;
         }
 
         .test-btn:disabled {
             background-color: #555;
-            cursor: not-allowed;
-            opacity: 0.6;
+            opacity: 0.5;
+        }
+
+        .sensor-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .sensor-box {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .sensor-value {
+            font-size: 36px;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .gamma-value { color: #ff6b6b; }
+        .beta-value { color: #ff9ff3; }
+
+        #status {
+            background-color: #1a4a1a;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;        }
+
+        #status.locked {
+            background-color: #4a1a1a;
+            border-color: #ff0000;
         }
 
         #debug {
@@ -72,499 +108,249 @@
             padding: 15px;
             border-radius: 10px;
             font-family: monospace;
-            font-size: 11px;
+            font-size: 12px;
             margin-top: 20px;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
-        .line {
-            margin: 3px 0;
-            padding: 3px;
-            border-left: 2px solid #555;
-            padding-left: 8px;
-        }
+        .log { margin: 3px 0; }
+        .log-error { color: #ff0000; }
+        .log-success { color: #00ff00; }
+        .log-warning { color: #ffaa00; }
 
-        .highlight { color: #00ff00; font-weight: bold; }
-        .warning { color: #ff0; font-weight: bold; }
-        .error { color: #f00; font-weight: bold; }
-        .locked { color: #ff0; font-weight: bold; }
-        .unlocked { color: #0f0; font-weight: bold; }
-
-        #lock-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(255, 165, 0, 0.9);
-            color: black;            padding: 15px 20px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 18px;
-            display: none;
-            z-index: 9999;
-        }
-
-        #lock-indicator.active { display: block; animation: pulse 1s infinite; }
-        #lock-indicator.permanent { background-color: rgba(255, 0, 0, 0.9); color: white; animation: none; }
-        #lock-indicator.starting { background-color: rgba(0, 255, 255, 0.9); color: black; animation: none; }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 5px;
-            background-color: #333;
-            margin-top: 10px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: #ff9500;
-            width: 100%;
-            transition: width 0.1s linear;
-        }
-
-        .counters-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 15px 0;
-        }
-
-        .counter-box {
-            background-color: #333;
-            border-radius: 10px;
-            padding: 15px;
-            min-width: 130px;
-            text-align: center;
-        }
-
-        .counter-box.invalid {
-            border: 2px solid #ff0000;
-            background-color: #3a1a1a;        }
-
-        .counter-title {
-            font-size: 13px;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-
-        .counter-value {
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        .gamma-positive { color: #ff6b6b; }
-        .gamma-negative { color: #4ecdc4; }
-        .gamma-zero { color: #00ff00; }
-        
-        .beta-positive { color: #ff9ff3; }
-        .beta-negative { color: #54a0ff; }
-        .beta-zero { color: #00ff00; }
-
-        .status-box {
-            background-color: #1a4a1a;
-            border: 2px solid #00ff00;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 16px;
-        }
-
-        .status-box.locked {
-            background-color: #4a1a1a;
-            border-color: #ff0000;
-        }
-
-        .info-box {
-            background-color: #004a4a;
-            border: 2px solid #00ffff;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        .beta-warning {
-            background-color: #4a1a1a;
-            border: 2px solid #ff0000;
-            color: #ff6b6b;            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-
-        .beta-warning.visible {
-            display: block;
-        }
-
-        .thresholds-display {
+        .thresholds {
             background-color: #2a1a3a;
             border: 2px solid #aa00ff;
-            color: #dd88ff;
             padding: 10px;
             border-radius: 10px;
-            margin: 10px 0;
+            margin: 15px 0;
             text-align: center;
-            font-size: 13px;
         }
     </style>
 </head>
 <body>
 
-    <div id="lock-indicator">
-        🔒 VERROUILLÉ<br>
-        <small id="countdown">4s</small>
-        <div class="progress-bar">
-            <div id="progress-fill" class="progress-fill"></div>
+    <h2 style="text-align: center;">🎯 VERSION TEST SIMPLE</h2>
+
+    <div id="status">👆 Clique sur "ACTIVER CAPTEURS"</div>
+
+    <div class="thresholds">
+        📐 GAMMA: +15° = C | -15° = B<br>
+        📏 BETA: +15° = D | -8° = E
+    </div>
+
+    <button id="btn-permission">🔓 ACTIVER CAPTEURS</button>
+
+    <div id="image-container" style="position: relative;">
+        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" style="position: absolute;">
+        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" style="position: absolute;">
+        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" style="position: absolute;">        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" style="position: absolute;">
+        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300" style="position: absolute;">
+    </div>
+
+    <div class="sensor-display">
+        <div class="sensor-box">
+            <div style="color: #aaa; font-size: 12px;">GAMMA</div>
+            <div id="gamma" class="sensor-value gamma-value">0°</div>
+        </div>
+        <div class="sensor-box">
+            <div style="color: #aaa; font-size: 12px;">BETA</div>
+            <div id="beta" class="sensor-value beta-value">0°</div>
         </div>
     </div>
 
-    <button id="btn-permission">🔓 Activer Capteurs</button>
-
-    <div class="info-box">
-        📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
-        🎯 1er changement = Verrouillage PERMANENT
-    </div>
-
-    <div class="thresholds-display">
-        📐 <strong>GAMMA:</strong> +15° (C) | -15° (B)<br>
-        📏 <strong>BETA:</strong> +15° (D) | -8° (E)
-    </div>
-
-    <div class="beta-warning" id="beta-warning">
-        ⚠️ BETA INVALIDE IGNORÉE (valeur hors plage)
-    </div>
-    <div id="image-container">
-        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
-        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
-        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="C">
-        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="D">
-        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300" alt="E">
-    </div>
-
-    <div class="status-box" id="status-box">
-        🎯 <span id="main-status">Clique sur "Activer Capteurs"</span>
-    </div>
-
-    <div class="counters-container">
-        <div class="counter-box" id="gamma-box">
-            <div class="counter-title">📐 GAMMA</div>
-            <div id="gamma-value" class="counter-value gamma-zero">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuils: ±15°</div>
-        </div>
-        <div class="counter-box" id="beta-box">
-            <div class="counter-title">📏 BETA</div>
-            <div id="beta-value" class="counter-value beta-zero">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuils: +15° / -8°</div>
-        </div>
-    </div>
-
-    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A</button>
-    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B</button>
-    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Image C</button>
-    <button class="test-btn" id="btn-d" onclick="manualShow('D')">🟡 Image D</button>
-    <button class="test-btn" id="btn-e" onclick="manualShow('E')">🟣 Image E</button>
+    <button class="test-btn" id="btn-a" onclick="setImg('A')">🔵 A</button>
+    <button class="test-btn" id="btn-b" onclick="setImg('B')">🟢 B</button>
+    <button class="test-btn" id="btn-c" onclick="setImg('C')">🔴 C</button>
+    <button class="test-btn" id="btn-d" onclick="setImg('D')">🟡 D</button>
+    <button class="test-btn" id="btn-e" onclick="setImg('E')">🟣 E</button>
 
     <div id="debug"></div>
 
     <script>
-        let isLocked = false;
-        let isPermanentlyLocked = false;
-        let lockTimeout = null;
-        let countdownInterval = null;
-        
+        let locked = false;
         let gammaRef = 0;
         let betaRef = 0;
-        
-        let gammaHist = [];
-        let betaHist = [];
-        const HIST_SIZE = 3;
-        
-        // SEUILS
-        const GAMMA_THRESHOLD = 15;
-        const BETA_THRESHOLD_POS = 15;
-        const BETA_THRESHOLD_NEG = -8;        
-        const STABILITY_TIME = 300;
-        let stableStartTime = 0;
-        let pendingZone = null;
-        let lastValidBeta = 0;
-        
-        const LOCK_DURATION = 4000;
+        let sensorsReady = false;
 
-        function log(msg, type = 'info') {
-            const debug = document.getElementById('debug');
-            const time = new Date().toLocaleTimeString();
+        function log(msg, type = '') {
+            const d = document.getElementById('debug');
             const entry = document.createElement('div');
-            entry.className = `line ${type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'success' ? 'highlight' : ''}`;
-            entry.textContent = `[${time}] ${msg}`;
-            debug.insertBefore(entry, debug.firstChild);
-            while (debug.children.length > 30) debug.removeChild(debug.lastChild);
+            entry.className = 'log ' + (type ? 'log-' + type : '');
+            entry.textContent = msg;
+            d.insertBefore(entry, d.firstChild);
+            while (d.children.length > 20) d.removeChild(d.lastChild);
         }
 
-        function smooth(value, hist) {
-            hist.push(value);
-            if (hist.length > HIST_SIZE) hist.shift();
-            return hist.reduce((a, b) => a + b, 0) / hist.length;
-        }
-
-        function normalizeGamma(angle) {
-            if (angle > 90) angle = 90;
-            if (angle < -90) angle = -90;
-            return angle;
-        }
-
-        // CORRECTION BETA: Ignore les valeurs hors plage normale
-        function validateBeta(value) {
-            // Beta normal est entre -90° et +90° pour un téléphone tenu normalement
-            // Toute valeur en dehors est un saut de capteur
-            if (value === null || value === undefined) {
-                log('⚠️ Beta = null', 'warning');
-                return lastValidBeta;
-            }
-            
-            if (value < -90 || value > 90) {
-                log(`⚠️ BETA INVALIDE: ${value}° (ignorée, garde ${lastValidBeta}°)`, 'warning');
-                document.getElementById('beta-warning').classList.add('visible');
-                document.getElementById('beta-box').classList.add('invalid');
-                return lastValidBeta;
-            }
-            
-            // Valeur valide
-            document.getElementById('beta-warning').classList.remove('visible');
-            document.getElementById('beta-box').classList.remove('invalid');
-            lastValidBeta = value;            return value;
-        }
-
-        function updateZones(gamma, beta) {
-            document.querySelectorAll('.threshold-zone, .threshold-bar').forEach(z => {
-                if (z.classList.contains('threshold-zone')) z.classList.remove('active');
+        function showImage(letter) {
+            log(`🖼️ Image: ${letter}`, 'success');
+            ['a','b','c','d','e'].forEach(id => {
+                document.getElementById('img-' + id).classList.remove('show');
             });
-            
-            let activeZone = 'a';
-            
-            if (gamma > GAMMA_THRESHOLD) {
-                activeZone = 'c';
-            } else if (gamma < -GAMMA_THRESHOLD) {
-                activeZone = 'b';
-            } else if (beta > BETA_THRESHOLD_POS) {
-                activeZone = 'd';
-            } else if (beta < BETA_THRESHOLD_NEG) {
-                activeZone = 'e';
-            }
-            
-            const zoneEl = document.getElementById('zone-' + activeZone);
-            if (zoneEl) zoneEl.classList.add('active');
-            
-            return activeZone.toUpperCase();
+            document.getElementById('img-' + letter.toLowerCase()).classList.add('show');
         }
 
-        function lockRotations(temporary = true) {
-            isLocked = true;
-            isPermanentlyLocked = !temporary;
-            
-            const lockIndicator = document.getElementById('lock-indicator');
-            lockIndicator.classList.add('active');
-            lockIndicator.classList.remove('starting', 'permanent');
-            
-            if (!temporary) {
-                lockIndicator.classList.add('permanent');
-                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small>Définitivement</small>';
-                document.getElementById('main-status').textContent = '🔒 IMAGE VERROUILLÉE';
-                document.getElementById('status-box').classList.add('locked');
-                log('🔒 VERROUILLAGE PERMANENT ACTIVÉ', 'success');
-            } else {
-                lockIndicator.classList.add('starting');
-                lockIndicator.innerHTML = '⏳ DÉMARRAGE...<br><small id="countdown">4s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
-                document.getElementById('main-status').textContent = '⏳ Attente 4 secondes...';
-                
-                let remaining = 4;
-                const countdownEl = document.getElementById('countdown');
-                const progressFill = document.getElementById('progress-fill');
-                countdownEl.textContent = remaining + 's';
-                progressFill.style.width = '100%';                
-                if (countdownInterval) clearInterval(countdownInterval);
-                countdownInterval = setInterval(() => {
-                    remaining -= 0.1;
-                    countdownEl.textContent = Math.ceil(remaining) + 's';
-                    progressFill.style.width = (remaining / 4 * 100) + '%';
-                }, 100);
-                
-                if (lockTimeout) clearTimeout(lockTimeout);
-                lockTimeout = setTimeout(() => {
-                    unlockRotations();
-                    if (countdownInterval) clearInterval(countdownInterval);
-                }, LOCK_DURATION);
-            }
-            
-            document.querySelectorAll('.test-btn').forEach(btn => btn.disabled = true);
+        function setImg(letter) {
+            if (locked) {
+                log('🔒 DÉJÀ VERROUILLÉ!', 'error');
+                return;            }
+            showImage(letter);
+            startLockdown();
         }
 
-        function unlockRotations() {
-            isLocked = false;
-            isPermanentlyLocked = false;
-            
-            gammaRef = window.lastGamma || 0;
-            betaRef = lastValidBeta;
-            
-            log(`✅ Déverrouillé - GammaRef: ${gammaRef}° | BetaRef: ${betaRef}°`, 'success');
-            
-            const lockIndicator = document.getElementById('lock-indicator');
-            lockIndicator.classList.remove('active', 'permanent', 'starting');
-            
-            document.getElementById('main-status').textContent = '🎯 Bouge ton téléphone !';
-            document.getElementById('status-box').classList.remove('locked');
-            
-            document.querySelectorAll('.test-btn').forEach(btn => btn.disabled = false);
-        }
-
-        function updateGammaDisplay(value) {
-            const el = document.getElementById('gamma-value');
-            el.textContent = Math.round(value) + '°';
-            el.classList.remove('gamma-positive', 'gamma-negative', 'gamma-zero');
-            if (value > 5) el.classList.add('gamma-positive');
-            else if (value < -5) el.classList.add('gamma-negative');
-            else el.classList.add('gamma-zero');
-        }
-
-        function updateBetaDisplay(value) {
-            const el = document.getElementById('beta-value');
-            el.textContent = Math.round(value) + '°';
-            el.classList.remove('beta-positive', 'beta-negative', 'beta-zero');
-            if (value > 5) el.classList.add('beta-positive');            else if (value < -5) el.classList.add('beta-negative');
-            else el.classList.add('beta-zero');
-        }
-
-        function changeImage(zone) {
-            log(`🖼️ CHANGEMENT: Image A → ${zone} (VERROUILLAGE PERMANENT)`, 'success');
-            
-            document.querySelectorAll('.my-image').forEach(img => img.classList.remove('show'));
-            
-            const newImg = document.getElementById('img-' + zone.toLowerCase());
-            if (newImg) {
-                newImg.classList.add('show');
-                document.getElementById('current-img').textContent = zone;
-                
-                // VERROUILLAGE PERMANENT
-                lockRotations(false);
-            }
-        }
-
-        function manualShow(letter) {
-            log(`👤 Manuel: Image ${letter}`, 'info');
-            
-            document.querySelectorAll('.my-image').forEach(img => img.classList.remove('show'));
-            
-            const targetImg = document.getElementById('img-' + letter.toLowerCase());
-            if (targetImg) {
-                targetImg.classList.add('show');
-            }
-            
-            gammaHist = [];
-            betaHist = [];
-            
-            lockRotations(true);
-        }
-
-        async function activateAndStart() {
-            log('🔑 Demande de permission...', 'info');
-            
-            if (typeof DeviceOrientationEvent !== 'undefined' && 
-                typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const response = await DeviceOrientationEvent.requestPermission();
-                    if (response === 'granted') {
-                        log('✅ Permission accordée', 'success');
-                        activateSensors();
-                        setTimeout(() => manualShow('A'), 500);
-                    } else {
-                        log('❌ Permission refusée', 'error');
-                        alert('Permission refusée');
-                    }                } catch (e) {
-                    log('❌ Erreur: ' + e.message, 'error');
-                    alert('Erreur: ' + e.message);
-                }
-            } else {
-                log('✅ Android - pas de permission requise', 'success');
-                activateSensors();
-                setTimeout(() => manualShow('A'), 500);
-            }
-        }
-
-        document.getElementById('btn-permission').addEventListener('click', activateAndStart);
-
-        function activateSensors() {
+        function startLockdown() {
+            locked = true;
+            const status = document.getElementById('status');
+            status.textContent = '🔒 VERROUILLÉ - IMAGE FIXE';
+            status.classList.add('locked');
             document.getElementById('btn-permission').style.display = 'none';
-            log('✅ Capteurs activés', 'success');
+            document.querySelectorAll('.test-btn').forEach(b => b.disabled = true);
+            log('🔒 VERROUILLAGE PERMANENT ACTIVÉ', 'success');
+        }
+
+        function startCountdown() {
+            const status = document.getElementById('status');
+            let seconds = 4;
+            status.textContent = `⏳ ${seconds}s...`;
             
-            window.addEventListener('deviceorientation', function(event) {
-                // Si verrouillé permanent, on ignore TOUT
-                if (isPermanentlyLocked) {
-                    return;
+            const interval = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    status.textContent = `⏳ ${seconds}s...`;
+                } else {
+                    clearInterval(interval);
+                    status.textContent = '🎯 BOUGE TON TÉLÉPHONE!';
+                    sensorsReady = true;
+                    log('✅ CAPTEURS ACTIFS!', 'success');
                 }
-                
-                let rawGamma = event.gamma;
-                let rawBeta = event.beta;
-                
-                if (rawGamma === null || rawGamma === undefined) rawGamma = 0;
-                
-                // VALIDER BETA avant tout
-                rawBeta = validateBeta(rawBeta);
-                
-                rawGamma = normalizeGamma(rawGamma);
-                
-                window.lastGamma = rawGamma;
+            }, 1000);
+        }
 
-                if (isLocked) {
-                    return;
-                }
+        async function activateSensors() {
+            log('🔑 Demande permission...', 'warning');
 
-                const smoothGamma = smooth(rawGamma, gammaHist);
-                const smoothBeta = smooth(rawBeta, betaHist);
-
-                let gammaRel = smoothGamma - gammaRef;
-                let betaRel = smoothBeta - betaRef;
-                
-                gammaRel = normalizeGamma(gammaRel);
-
-                document.getElementById('gamma-rel').textContent = Math.round(gammaRel) + '°';
-                document.getElementById('beta-rel').textContent = Math.round(betaRel) + '°';
-                updateGammaDisplay(gammaRel);                updateBetaDisplay(betaRel);
-
-                const potentialZone = updateZones(gammaRel, betaRel);
-                const currentImg = 'A'; // Après manualShow, c'est toujours A
-
-                log(`📊 Gamma: ${Math.round(gammaRel)}° | Beta: ${Math.round(betaRel)}° | Zone: ${potentialZone}`, 'info');
-
-                if (potentialZone !== currentImg) {
-                    if (pendingZone !== potentialZone) {
-                        pendingZone = potentialZone;
-                        stableStartTime = Date.now();
-                        log(`🎯 Zone potentielle: ${potentialZone}`, 'warning');
-                    }
-                    
-                    const elapsed = Date.now() - stableStartTime;
-                    
-                    if (elapsed >= STABILITY_TIME) {
-                        log(`✅ SEUIL ATTEINT ! Changement vers ${potentialZone}`, 'success');
-                        changeImage(potentialZone);
-                        pendingZone = null;
+            const requestPermission = async () => {
+                if (typeof DeviceOrientationEvent !== 'undefined' && 
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    try {
+                        const response = await DeviceOrientationEvent.requestPermission();
+                        if (response === 'granted') {
+                            log('✅ Permission accordée', 'success');
+                            return true;
+                        } else {
+                            log('❌ Permission refusée', 'error');
+                            return false;
+                        }
+                    } catch (e) {
+                        log('❌ Erreur: ' + e.message, 'error');                        return false;
                     }
                 } else {
-                    pendingZone = null;
+                    log('✅ Android - pas de permission', 'success');
+                    return true;
+                }
+            };
+
+            const granted = await requestPermission();
+            if (!granted) return;
+
+            document.getElementById('btn-permission').style.display = 'none';
+            showImage('A');
+            startCountdown();
+
+            // ÉCOUTEUR DE CAPTEURS - LE PLUS SIMPLE POSSIBLE
+            window.addEventListener('deviceorientation', function(event) {
+                // Si verrouillé, on sort IMMÉDIATEMENT
+                if (locked) return;
+
+                // Si pas encore prêt (pendant les 4s), on sort
+                if (!sensorsReady) return;
+
+                // Récupérer valeurs
+                let gamma = event.gamma;
+                let beta = event.beta;
+
+                // Gérer null
+                if (gamma === null || gamma === undefined) gamma = 0;
+                if (beta === null || beta === undefined) beta = 0;
+
+                // Limiter gamma entre -90 et 90
+                if (gamma > 90) gamma = 90;
+                if (gamma < -90) gamma = -90;
+
+                // IGNORER BETA si valeur absurde (saute à -360 etc)
+                if (beta < -90 || beta > 90) {
+                    beta = 0; // On ignore, on met 0
+                }
+
+                // Afficher valeurs
+                document.getElementById('gamma').textContent = Math.round(gamma) + '°';
+                document.getElementById('beta').textContent = Math.round(beta) + '°';
+
+                // Calculer relatif à la référence (capturée après les 4s)
+                let gammaRel = gamma - gammaRef;
+                let betaRel = beta - betaRef;
+
+                // Log toutes les 10 lectures pour ne pas spammer
+                if (Math.random() < 0.1) {                    log(`📊 G:${Math.round(gammaRel)}° B:${Math.round(betaRel)}°`, '');
+                }
+
+                // VÉRIFIER LES SEUILS
+                let newImage = null;
+
+                if (gammaRel > 15) {
+                    newImage = 'C';
+                    log(`✅ GAMMA > 15° (${Math.round(gammaRel)}°) → C`, 'success');
+                } else if (gammaRel < -15) {
+                    newImage = 'B';
+                    log(`✅ GAMMA < -15° (${Math.round(gammaRel)}°) → B`, 'success');
+                } else if (betaRel > 15) {
+                    newImage = 'D';
+                    log(`✅ BETA > 15° (${Math.round(betaRel)}°) → D`, 'success');
+                } else if (betaRel < -8) {
+                    newImage = 'E';
+                    log(`✅ BETA < -8° (${Math.round(betaRel)}°) → E`, 'success');
+                }
+
+                // Si une image doit changer
+                if (newImage) {
+                    log(`🎯 CHANGEMENT: A → ${newImage}`, 'success');
+                    showImage(newImage);
+                    startLockdown();
                 }
             });
+
+            log('✅ Écouteur deviceorientation activé', 'success');
         }
 
-        log('📱 Page chargée - Prêt!', 'info');
+        // Capturer la référence APRÈS les 4 secondes
+        const originalStartCountdown = startCountdown;
+        startCountdown = function() {
+            let seconds = 4;
+            const status = document.getElementById('status');
+            status.textContent = `⏳ ${seconds}s...`;
+            
+            const interval = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    status.textContent = `⏳ ${seconds}s...`;
+                } else {
+                    clearInterval(interval);
+                    status.textContent = '🎯 BOUGE TON TÉLÉPHONE!';
+                    sensorsReady = true;
+                    
+                    // CAPTURER LA RÉFÉRENCE MAINTENANT
+                    gammaRef = 0;
+                    betaRef = 0;                    log(`📐 Références capturées: G=${gammaRef}° B=${betaRef}°`, 'success');
+                    log('✅ CAPTEURS ACTIFS!', 'success');
+                }
+            }, 1000);
+        }
+
+        document.getElementById('btn-permission').addEventListener('click', activateSensors);
+
+        log('📱 Page chargée', 'warning');
+        log('🔒 Protocol: ' + window.location.protocol, 'warning');
     </script>
 </body>
 </html>
