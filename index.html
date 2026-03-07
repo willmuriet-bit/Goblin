@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation avec Verrouillage Intelligent</title>
+    <title>Rotation Alpha + Beta</title>
     <style>
         body {
             margin: 0;
@@ -89,30 +89,14 @@
             font-size: 16px;
         }
 
-        .locked {
-            color: #ff0;
-            font-weight: bold;
-        }
-
-        .unlocked {
-            color: #0f0;
-            font-weight: bold;        }
-
-        .permanently-locked {
-            color: #f00;
-            font-weight: bold;
-        }
-
-        .grace-period {
-            color: #0ff;
-            font-weight: bold;
-        }
+        .locked { color: #ff0; font-weight: bold; }
+        .unlocked { color: #0f0; font-weight: bold; }
+        .permanently-locked { color: #f00; font-weight: bold; }
 
         #lock-indicator {
             position: fixed;
             top: 10px;
-            right: 10px;
-            background-color: rgba(255, 165, 0, 0.9);
+            right: 10px;            background-color: rgba(255, 165, 0, 0.9);
             color: black;
             padding: 15px 20px;
             border-radius: 10px;
@@ -123,29 +107,16 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        #lock-indicator.active {
-            display: block;
-            animation: pulse 1s infinite;
-        }
-
-        #lock-indicator.permanent {
-            background-color: rgba(255, 0, 0, 0.9);
-            color: white;
-            animation: none;
-        }
-
-        #lock-indicator.grace {
-            background-color: rgba(0, 255, 255, 0.9);
-            color: black;
-            animation: none;
-        }
+        #lock-indicator.active { display: block; animation: pulse 1s infinite; }
+        #lock-indicator.permanent { background-color: rgba(255, 0, 0, 0.9); color: white; animation: none; }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
 
-        .progress-bar {            width: 100%;
+        .progress-bar {
+            width: 100%;
             height: 5px;
             background-color: #333;
             margin-top: 10px;
@@ -164,20 +135,17 @@
             display: flex;
             justify-content: space-around;
             margin: 15px 0;
-            flex-wrap: wrap;
         }
 
         .counter-box {
             background-color: #333;
             border-radius: 10px;
             padding: 15px;
-            margin: 5px;
             min-width: 120px;
             text-align: center;
         }
 
-        .counter-title {
-            font-size: 14px;
+        .counter-title {            font-size: 14px;
             color: #aaa;
             margin-bottom: 5px;
         }
@@ -194,22 +162,39 @@
         .beta-positive { color: #ff9ff3; }
         .beta-negative { color: #54a0ff; }
         .beta-zero { color: #00ff00; }
+
         .threshold-info {
             text-align: center;
             margin: 10px 0;
             padding: 10px;
             background-color: #2a2a2a;
             border-radius: 10px;
-            font-size: 14px;
         }
 
-        .threshold-info span {
-            color: #ffd93d;
-            font-weight: bold;
+        .threshold-info span { color: #ffd93d; font-weight: bold; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .image-grid-item {
+            padding: 10px;
+            background-color: #333;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .image-grid-item.active {
+            background-color: #007bff;
+            border: 2px solid #00ff00;
         }
     </style>
-</head>
-<body>
+</head><body>
 
     <div id="lock-indicator">
         🔒 VERROUILLÉ<br>
@@ -222,12 +207,19 @@
     <button id="btn-permission">🔓 Activer Capteurs</button>
 
     <div id="image-container">
-        <!-- 5 IMAGES FIXES - Ne changent jamais -->
-        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="Image A - Fleur">
-        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="Image B - Montagne">
-        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="Image C - Océan">
-        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="Image D - Soleil">
-        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300" alt="Image E - Lune">
+        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
+        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
+        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="C">
+        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="D">
+        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300" alt="E">
+    </div>
+
+    <div class="image-grid">
+        <div class="image-grid-item" id="grid-b">B ← Gauche</div>
+        <div class="image-grid-item active" id="grid-a">A Centre</div>
+        <div class="image-grid-item" id="grid-c">C → Droite</div>
+        <div class="image-grid-item" id="grid-e">E ↓ Bas</div>
+        <div class="image-grid-item" id="grid-d">D ↑ Haut</div>
     </div>
 
     <div class="counters-container">
@@ -244,58 +236,63 @@
     <div class="threshold-info">
         🎯 Seuil: <span>±15°</span> | Alpha: A/B/C | Beta: A/D/E
     </div>
-    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A (Fleur)</button>
-    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B (Montagne)</button>
-    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Image C (Océan)</button>
-    <button class="test-btn" id="btn-d" onclick="manualShow('D')">🟡 Image D (Soleil)</button>
-    <button class="test-btn" id="btn-e" onclick="manualShow('E')">🟣 Image E (Lune)</button>
 
-    <div id="debug">
-        <div class="line">Statut capteurs: <span id="status">En attente</span></div>
+    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A</button>
+    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B</button>
+    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Image C</button>
+    <button class="test-btn" id="btn-d" onclick="manualShow('D')">🟡 Image D</button>
+    <button class="test-btn" id="btn-e" onclick="manualShow('E')">🟣 Image E</button>
+
+    <div id="debug">        <div class="line">Statut: <span id="status">En attente</span></div>
         <div class="line">État: <span id="lock-status" class="unlocked">🔓 DÉVERROUILLÉ</span></div>
-        <div class="line">Alpha brut: <span id="alpha-raw">-</span>°</div>
-        <div class="line">Alpha relatif: <span id="alpha-relative" class="highlight">0°</span></div>
+        <div class="line">Alpha: <span id="alpha-raw" class="highlight">0°</span></div>
         <div class="line">Beta: <span id="beta-raw" class="highlight">0°</span></div>
-        <div class="line">Image active: <span id="current-img" class="highlight">A</span></div>
-        <div class="line">Mode: <span id="mode">Clique sur un bouton pour commencer</span></div>
+        <div class="line">Image: <span id="current-img" class="highlight">A</span></div>
+        <div class="line">Mode: <span id="mode">Clique sur un bouton</span></div>
     </div>
 
     <script>
         let sensorsActive = false;
         let isLocked = false;
         let isPermanentlyLocked = false;
-        let isGracePeriod = false;
         let lockTimeout = null;
         let countdownInterval = null;
-        let graceTimeout = null;
         
-        // Références pour calcul relatif
+        // Références pour les deux axes
         let alphaReference = 0;
-        let alphaRelative = 0;
-        let betaRelative = 0;
         let betaReference = 0;
+        
+        // Filtrage pour stabiliser (moyenne mobile)
+        let alphaHistory = [];
+        let betaHistory = [];
+        const HISTORY_SIZE = 3;
         
         const LOCK_DURATION = 10000;
         const GRACE_DURATION = 2000;
-        const ROTATION_THRESHOLD = 15; // Seuil changé de 30° à 15°
+        const THRESHOLD = 15;
+
+        // Fonction pour lisser les valeurs
+        function smoothValue(value, history) {
+            history.push(value);
+            if (history.length > HISTORY_SIZE) {
+                history.shift();
+            }
+            return history.reduce((a, b) => a + b, 0) / history.length;
+        }
 
         function lockRotations(temporary = true) {
             isLocked = true;
             isPermanentlyLocked = !temporary;
-            isGracePeriod = false;
             
             const lockIndicator = document.getElementById('lock-indicator');
-            
             lockIndicator.classList.add('active');
-            lockIndicator.classList.remove('permanent', 'grace');
             
             if (isPermanentlyLocked) {
-                lockIndicator.classList.add('permanent');
                 lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small>Définitivement</small>';
-                document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ (PERMANENT)';                document.getElementById('lock-status').className = 'permanently-locked';
+                document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ (PERMANENT)';
+                document.getElementById('lock-status').className = 'permanently-locked';
                 document.getElementById('mode').textContent = 'Rotations désactivées';
-            } else {
-                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
+            } else {                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
                 document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
                 document.getElementById('lock-status').className = 'locked';
                 document.getElementById('mode').textContent = 'Attente 10s...';
@@ -309,14 +306,13 @@
                 if (countdownInterval) clearInterval(countdownInterval);
                 countdownInterval = setInterval(() => {
                     remaining -= 0.1;
-                    const seconds = Math.ceil(remaining);
-                    countdownEl.textContent = seconds + 's';
+                    countdownEl.textContent = Math.ceil(remaining) + 's';
                     progressFill.style.width = (remaining / 10 * 100) + '%';
                 }, 100);
                 
                 if (lockTimeout) clearTimeout(lockTimeout);
                 lockTimeout = setTimeout(() => {
-                    startGracePeriod();
+                    unlockRotations();
                     if (countdownInterval) clearInterval(countdownInterval);
                 }, LOCK_DURATION);
             }
@@ -326,90 +322,67 @@
             });
         }
 
-        function startGracePeriod() {
-            isLocked = true;
-            isGracePeriod = true;
-            
-            const lockIndicator = document.getElementById('lock-indicator');
-            lockIndicator.classList.remove('permanent');
-            lockIndicator.classList.add('grace');
-            lockIndicator.innerHTML = '⏳ PRÉPARATION...<br><small id="grace-countdown">2s</small>';
-            
-            document.getElementById('lock-status').textContent = '⏳ PÉRIODE DE GRÂCE';
-            document.getElementById('lock-status').className = 'grace-period';
-            document.getElementById('mode').textContent = 'Préparation des capteurs...';
-            
-            let graceRemaining = 2;
-            const graceCountdownEl = document.getElementById('grace-countdown');
-            graceCountdownEl.textContent = graceRemaining + 's';            
-            if (graceTimeout) clearTimeout(graceTimeout);
-            graceTimeout = setTimeout(() => {
-                endGracePeriod();
-            }, GRACE_DURATION);
-        }
-
-        function endGracePeriod() {
-            // Capturer les positions actuelles comme référence (0°)
-            alphaReference = window.currentAlpha || 0;
-            betaReference = window.currentBeta || 0;
-            alphaRelative = 0;
-            betaRelative = 0;
-            
-            console.log('🎯 Références définies - Alpha:', alphaReference, 'Beta:', betaReference);
-            
-            unlockRotations();
-        }
-
-        function updateAlphaDisplay(value) {
-            const alphaValue = document.getElementById('alpha-value');
-            alphaValue.textContent = Math.round(value) + '°';
-            
-            alphaValue.classList.remove('alpha-positive', 'alpha-negative', 'alpha-zero');
-            if (value > 0) {
-                alphaValue.classList.add('alpha-positive');
-            } else if (value < 0) {
-                alphaValue.classList.add('alpha-negative');
-            } else {
-                alphaValue.classList.add('alpha-zero');
-            }
-        }
-
-        function updateBetaDisplay(value) {
-            const betaValue = document.getElementById('beta-value');
-            betaValue.textContent = Math.round(value) + '°';
-            
-            betaValue.classList.remove('beta-positive', 'beta-negative', 'beta-zero');
-            if (value > 0) {
-                betaValue.classList.add('beta-positive');
-            } else if (value < 0) {
-                betaValue.classList.add('beta-negative');
-            } else {
-                betaValue.classList.add('beta-zero');
-            }
-        }
-
         function unlockRotations() {
             isLocked = false;
-            isPermanentlyLocked = false;            isGracePeriod = false;
+            isPermanentlyLocked = false;
+            
+            // IMPORTANT: Capturer les références DES DEUX axes en même temps
+            alphaReference = window.lastAlpha || 0;
+            betaReference = window.lastBeta || 0;
+            
+            console.log('🎯 Références capturées - Alpha:', alphaReference, '| Beta:', betaReference);
             
             const lockIndicator = document.getElementById('lock-indicator');
-            lockIndicator.classList.remove('active', 'permanent', 'grace');
+            lockIndicator.classList.remove('active');
             
-            document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ (bouge ton téléphone!)';
+            document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ';
             document.getElementById('lock-status').className = 'unlocked';
-            document.getElementById('mode').textContent = 'Rotation ACTIVE - ±15° = changement';
+            document.getElementById('mode').textContent = 'Bouge ton téléphone (Alpha + Beta actifs)';
             
-            // Réinitialiser les affichages à 0
-            updateAlphaDisplay(0);
-            updateBetaDisplay(0);
-            
-            document.querySelectorAll('.test-btn').forEach(btn => {
+            // Réinitialiser affichages
+            updateDisplay(0, 0);
+                        document.querySelectorAll('.test-btn').forEach(btn => {
                 btn.disabled = false;
             });
+            
+            document.querySelectorAll('.image-grid-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById('grid-a').classList.add('active');
+        }
+
+        function updateDisplay(alpha, beta) {
+            const alphaEl = document.getElementById('alpha-value');
+            const betaEl = document.getElementById('beta-value');
+            
+            alphaEl.textContent = Math.round(alpha) + '°';
+            betaEl.textContent = Math.round(beta) + '°';
+            
+            // Couleurs Alpha
+            alphaEl.classList.remove('alpha-positive', 'alpha-negative', 'alpha-zero');
+            if (alpha > 5) alphaEl.classList.add('alpha-positive');
+            else if (alpha < -5) alphaEl.classList.add('alpha-negative');
+            else alphaEl.classList.add('alpha-zero');
+            
+            // Couleurs Beta
+            betaEl.classList.remove('beta-positive', 'beta-negative', 'beta-zero');
+            if (beta > 5) betaEl.classList.add('beta-positive');
+            else if (beta < -5) betaEl.classList.add('beta-negative');
+            else betaEl.classList.add('beta-zero');
+        }
+
+        function updateGrid(image) {
+            document.querySelectorAll('.image-grid-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeItem = document.getElementById('grid-' + image.toLowerCase());
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
         }
 
         function manualShow(letter) {
-            console.log('👤 Manuel: affichage image', letter);
+            console.log('👤 Manuel: Image', letter);
             
             document.querySelectorAll('.my-image').forEach(img => {
                 img.classList.remove('show');
@@ -417,9 +390,14 @@
             
             const targetImg = document.getElementById('img-' + letter.toLowerCase());
             if (targetImg) {
-                targetImg.classList.add('show');
-                document.getElementById('current-img').textContent = letter;
+                targetImg.classList.add('show');                document.getElementById('current-img').textContent = letter;
             }
+            
+            updateGrid(letter);
+            
+            // Réinitialiser historiques
+            alphaHistory = [];
+            betaHistory = [];
             
             lockRotations(true);
         }
@@ -439,77 +417,78 @@
                 }
             } else {
                 activateSensors();
-            }        });
+            }
+        });
 
         function activateSensors() {
             sensorsActive = true;
             document.getElementById('status').textContent = '✅ ACTIF';
             document.getElementById('status').style.color = '#00ff00';
             document.getElementById('btn-permission').style.display = 'none';
-            document.getElementById('mode').textContent = 'Clique sur un bouton (A/B/C/D/E) pour commencer';
+            document.getElementById('mode').textContent = 'Clique sur un bouton pour commencer';
             
             window.addEventListener('deviceorientation', function(event) {
-                // Stocker les valeurs brutes
-                window.currentAlpha = event.alpha || 0;
-                window.currentBeta = event.beta || 0;
+                // Stocker les dernières valeurs brutes
+                window.lastAlpha = event.alpha || 0;
+                window.lastBeta = event.beta || 0;
                 
-                // Afficher alpha et beta bruts
-                document.getElementById('alpha-raw').textContent = Math.round(window.currentAlpha);
-                document.getElementById('beta-raw').textContent = Math.round(window.currentBeta);
+                // Afficher valeurs brutes
+                document.getElementById('alpha-raw').textContent = Math.round(window.lastAlpha);
+                document.getElementById('beta-raw').textContent = Math.round(window.lastBeta);
 
-                // SI VERROUILLÉ, on ignore
+                // SI VERROUILLÉ, on ignore tout
                 if (isLocked) {
                     return;
                 }
-
-                // Si aucun bouton n'a été cliqué encore, on ne fait rien
+                // Si aucun bouton cliqué encore, on ne fait rien
                 if (document.getElementById('mode').textContent.includes('Clique sur un bouton')) {
                     return;
                 }
 
-                // Calculer les valeurs RELATIVES par rapport aux références
-                alphaRelative = window.currentAlpha - alphaReference;
-                betaRelative = window.currentBeta - betaReference;
+                // Lisser les valeurs
+                const smoothAlpha = smoothValue(window.lastAlpha, alphaHistory);
+                const smoothBeta = smoothValue(window.lastBeta, betaHistory);
+
+                // Calculer les valeurs RELATIVES
+                let alphaRelative = smoothAlpha - alphaReference;
+                let betaRelative = smoothBeta - betaReference;
                 
                 // Normaliser alpha entre -180 et 180
-                if (alphaRelative > 180) {
-                    alphaRelative = alphaRelative - 360;
-                } else if (alphaRelative < -180) {
-                    alphaRelative = alphaRelative + 360;
-                }
-                
-                // Afficher les valeurs relatives
-                document.getElementById('alpha-relative').textContent = Math.round(alphaRelative) + '°';
-                updateAlphaDisplay(alphaRelative);
-                updateBetaDisplay(betaRelative);
+                if (alphaRelative > 180) alphaRelative -= 360;
+                if (alphaRelative < -180) alphaRelative += 360;
 
-                // Déterminer l'image selon Alpha ET Beta
+                // Afficher valeurs relatives
+                updateDisplay(alphaRelative, betaRelative);
+
+                // DÉTERMINER L'IMAGE - Les deux axes sont actifs !
                 let targetImage = 'A';
+                let reason = 'Centre';
 
-                // Priorité à BETA (haut/bas)
-                if (betaRelative > ROTATION_THRESHOLD) {
-                    // Beta > +15° (téléphone incliné vers le haut) → Image D                    targetImage = 'D';
-                } else if (betaRelative < -ROTATION_THRESHOLD) {
-                    // Beta < -15° (téléphone incliné vers le bas) → Image E
+                // Vérifier BETA en premier (inclinaison haut/bas)
+                if (betaRelative > THRESHOLD) {
+                    targetImage = 'D';
+                    reason = 'Beta > +15° (HAUT)';
+                } else if (betaRelative < -THRESHOLD) {
                     targetImage = 'E';
-                } 
-                // Sinon, vérifier ALPHA (gauche/droite)
-                else if (alphaRelative > ROTATION_THRESHOLD) {
-                    // Alpha > +15° (droite) → Image C
-                    targetImage = 'C';
-                } else if (alphaRelative < -ROTATION_THRESHOLD) {
-                    // Alpha < -15° (gauche) → Image B
-                    targetImage = 'B';
+                    reason = 'Beta < -15° (BAS)';
                 }
-                // Sinon → Image A (centre)
+                // Sinon vérifier ALPHA (rotation gauche/droite)
+                else if (alphaRelative > THRESHOLD) {
+                    targetImage = 'C';
+                    reason = 'Alpha > +15° (DROITE)';
+                } else if (alphaRelative < -THRESHOLD) {
+                    targetImage = 'B';
+                    reason = 'Alpha < -15° (GAUCHE)';
+                }
 
-                // Changer l'image seulement si différent
+                // Changer l'image si différent
                 const currentDisplayed = document.getElementById('current-img').textContent;
                 if (currentDisplayed !== targetImage) {
                     console.log('🔄 Changement:', currentDisplayed, '→', targetImage, 
-                        '(Alpha:', Math.round(alphaRelative) + '°, Beta:', Math.round(betaRelative) + '°)');
-                    
-                    document.querySelectorAll('.my-image').forEach(img => {
+                        '| Alpha:', Math.round(alphaRelative) + '°', 
+                        '| Beta:', Math.round(betaRelative) + '°',
+                        '| Raison:', reason);
+                                        document.querySelectorAll('.my-image').forEach(img => {
                         img.classList.remove('show');
                     });
                     
@@ -517,15 +496,16 @@
                     if (newImg) {
                         newImg.classList.add('show');
                         document.getElementById('current-img').textContent = targetImage;
+                        updateGrid(targetImage);
                         
-                        // VERROUILLER DÉFINITIVEMENT après le premier changement
+                        // VERROUILLER DÉFINITIVEMENT
                         lockRotations(false);
                     }
                 }
             });
         }
 
-        console.log('📱 Page chargée - Prêt!');
+        console.log('📱 Page chargée - Alpha + Beta actifs !');
     </script>
 </body>
 </html>
