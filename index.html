@@ -36,11 +36,11 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            display: none; /* On cache tout par défaut */
+            display: none;
         }
 
         img.active {
-            display: block; /* On affiche l'image active */
+            display: block;
         }
 
         #info {
@@ -57,7 +57,8 @@
             border-radius: 50px;
             font-size: 1rem;
             cursor: pointer;
-            display: none; /* Caché si pas besoin */
+            /* MODIFICATION ICI : le bouton est visible par défaut */
+            display: block;
         }
         
         .status {
@@ -81,8 +82,8 @@
         <span id="angle-display">Angle: 0°</span>
     </div>
 
-    <button id="permission-btn">Activer les capteurs</button>
-    <div class="status" id="status-msg">En attente de permission...</div>
+    <button id="permission-btn">🔓 Activer les capteurs de mouvement</button>
+    <div class="status" id="status-msg">Clique sur le bouton pour commencer</div>
 
     <script>
         const btn = document.getElementById('permission-btn');
@@ -93,80 +94,71 @@
         const imgB = document.getElementById('img-b');
         const imgC = document.getElementById('img-c');
 
-        // 1. GESTION DE LA PERMISSION (Nécessaire pour iOS 13+ et Android récent)
-        function requestPermission() {
+        let permissionGranted = false;
+
+        // Fonction pour demander la permission        async function requestPermission() {
+            // iOS 13+
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // iOS 13+                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            startListening();
-                        } else {
-                            alert("Permission refusée. La page ne fonctionnera pas.");
-                        }
-                    })
-                    .catch(console.error);
+                try {
+                    const response = await DeviceOrientationEvent.requestPermission();
+                    if (response === 'granted') {
+                        permissionGranted = true;
+                        startListening();
+                    } else {
+                        statusMsg.innerText = "❌ Permission refusée";
+                        alert("Permission refusée. La page ne fonctionnera pas.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    statusMsg.innerText = "❌ Erreur: " + error;
+                }
             } else {
-                // Android ou iOS ancien (pas de permission nécessaire)
+                // Android et autres navigateurs
+                permissionGranted = true;
                 startListening();
             }
         }
 
         btn.addEventListener('click', requestPermission);
 
-        // 2. ÉCOUTE DES MOUVEMENTS
         function startListening() {
             btn.style.display = 'none';
-            statusMsg.innerText = "Capteurs actifs !";
+            statusMsg.innerText = "✅ Capteurs actifs ! Pose ton téléphone à plat.";
             window.addEventListener('deviceorientation', handleOrientation);
         }
 
         function handleOrientation(event) {
-            // 'alpha' est la rotation autour de l'axe Z (la boussole)
-            // Valeurs : 0 à 360 (ou -180 à 180 selon le navigateur)
             let alpha = event.alpha;
-
-            // 'beta' est l'inclinaison avant/arrière
-            // 'gamma' est l'inclinaison gauche/droite
             let beta = event.beta;
             let gamma = event.gamma;
 
             // Affichage de debug
-            angleDisplay.innerText = `Alpha: ${Math.round(alpha)}° | Beta: ${Math.round(beta)}°`;
+            if (alpha !== null) {
+                angleDisplay.innerText = `Alpha: ${Math.round(alpha)}° | Beta: ${Math.round(beta)}°`;
+            }
 
-            // VÉRIFICATION : Est-ce que le téléphone est posé à plat ?
-            // Si Beta et Gamma sont proches de 0, le téléphone est plat.
-            // On tolère une petite marge (ex: +/- 20 degrés)
-            if (Math.abs(beta) < 20 && Math.abs(gamma) < 20) {
+            // Vérification : téléphone à plat ?
+            if (beta !== null && gamma !== null && Math.abs(beta) < 30 && Math.abs(gamma) < 30) {
                 
-                // Normalisation de l'alpha pour avoir des valeurs entre -180 et 180
+                // Normalisation alpha
                 if (alpha > 180) { alpha = alpha - 360; }
 
-                // LOGIQUE DE CHANGEMENT D'IMAGE
-                // On considère que 0 est le centre (Image A)
-                
+                // Logique de changement
                 if (alpha > -45 && alpha < 45) {
-                    // Centre : Image A                    showImage('A');
-                } else if (alpha <= -45) {
-                    // Tourné vers la GAUCHE (négatif) : Image B
+                    showImage('A');                } else if (alpha <= -45) {
                     showImage('B');
                 } else if (alpha >= 45) {
-                    // Tourné vers la DROITE (positif) : Image C
                     showImage('C');
                 }
 
-            } else {
-                // Si le téléphone n'est pas plat, on peut remettre l'image A ou ne rien faire
-                // showImage('A'); 
             }
         }
 
         function showImage(letter) {
-            // On cache tout
             imgA.classList.remove('active');
             imgB.classList.remove('active');
             imgC.classList.remove('active');
 
-            // On affiche la bonne
             if (letter === 'A') imgA.classList.add('active');
             if (letter === 'B') imgB.classList.add('active');
             if (letter === 'C') imgC.classList.add('active');
