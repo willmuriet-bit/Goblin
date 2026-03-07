@@ -2,278 +2,112 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAPTEURS - BOUTONS GARANTIS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zone Interactives</title>
     <style>
-        body {
+        /* 1. Fond blanc et suppression des marges par défaut */
+        body, html {
             margin: 0;
-            padding: 10px;
-            background-color: #1a1a1a;
-            color: white;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            overflow: hidden; /* Empêche le défilement */
             font-family: Arial, sans-serif;
         }
 
-        #image-container {
-            width: 250px;
-            height: 250px;
-            margin: 20px auto;
-            border: 5px solid #00ff00;
-            background-color: #333;
-            position: relative;
-            border-radius: 15px;
-            overflow: hidden;
+        /* 2. Grille : 2 colonnes, 4 rangées */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 zones verticales */
+            grid-template-rows: 1fr 1fr 1fr 1fr; /* 4 zones horizontales */
+            width: 100vw;
+            height: 100vh;
         }
 
-        .my-image {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .my-image.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        button {
-            display: block;
-            margin: 8px auto;
-            padding: 15px 30px;
-            font-size: 18px;
-            border: none;
-            border-radius: 25px;
+        /* Style des zones invisibles */
+        .zone {
+            /* Pas de bordure, pas de fond (invisible) */
             cursor: pointer;
-            font-weight: bold;            width: 100%;
-            max-width: 300px;
+            -webkit-tap-highlight-color: transparent; /* Enlève le flash bleu sur mobile */
         }
 
-        #btn-permission {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .btn-a { background-color: #0066ff; color: white; }
-        .btn-b { background-color: #00aa44; color: white; }
-        .btn-c { background-color: #ff4444; color: white; }
-        .btn-d { background-color: #ffcc00; color: black; }
-        .btn-e { background-color: #aa44ff; color: white; }
-
-        button:disabled {
-            background-color: #555;
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .sensors {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-
-        .sensor-box {
-            background-color: #333;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            min-width: 100px;
-        }
-
-        .sensor-value {
-            font-size: 32px;
+        /* Le chiffre au centre */
+        #display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 15rem; /* Très gros chiffre */
+            color: #333;
+            pointer-events: none; /* Permet de cliquer "à travers" le chiffre */
+            user-select: none;
             font-weight: bold;
-            font-family: monospace;
+            opacity: 0.2; /* Légèrement transparent pour ne pas gêner la vue */
+            transition: opacity 0.1s;
         }
 
-        .gamma { color: #ff6b6b; }
-        .alpha { color: #4ecdc4; }
-
-        #status {
-            background-color: #1a4a1a;
-            border: 2px solid #00ff00;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
+        /* Optionnel : Un petit effet visuel quand on touche (pour le debug) */        .zone:active {
+            background-color: rgba(0,0,0,0.05); 
         }
-
-        #status.locked {
-            background-color: #4a1a1a;
-            border-color: #ff0000;
-        }
-
-        #debug {
-            background-color: #000;
-            padding: 15px;
-            border-radius: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            margin-top: 20px;
-        }
-
-        .ok { color: #00ff00; }
-        .err { color: #ff0000; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">🎯 TEST BOUTONS</h2>
+    <!-- Le chiffre qui s'affiche au centre -->
+    <div id="display"></div>
 
-    <div id="status">Prêt</div>
-
-    <button id="btn-permission" onclick="activate()">🔓 ACTIVER CAPTEURS</button>
-
-    <div id="image-container">
-        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300">
-        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300">
-        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300">
-        <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300">
-        <img id="img-e" class="my-image" src="https://picsum.photos/seed/lune222/300/300">
+    <!-- La grille de 8 zones -->
+    <div class="grid-container">
+        <!-- Les zones sont numérotées de 1 à 8 -->
+        <div class="zone" data-number="1"></div>
+        <div class="zone" data-number="2"></div>
+        <div class="zone" data-number="3"></div>
+        <div class="zone" data-number="4"></div>
+        <div class="zone" data-number="5"></div>
+        <div class="zone" data-number="6"></div>
+        <div class="zone" data-number="7"></div>
+        <div class="zone" data-number="8"></div>
     </div>
-
-    <div class="sensors">
-        <div class="sensor-box">
-            <div>GAMMA</div>
-            <div id="gamma" class="sensor-value gamma">0°</div>
-        </div>
-        <div class="sensor-box">
-            <div>ALPHA</div>
-            <div id="alpha" class="sensor-value alpha">0°</div>
-        </div>
-    </div>
-    <button class="btn-a" onclick="changeImage('A')">🔵 A</button>
-    <button class="btn-b" onclick="changeImage('B')">🟢 B</button>
-    <button class="btn-c" onclick="changeImage('C')">🔴 C</button>
-    <button class="btn-d" onclick="changeImage('D')">🟡 D</button>
-    <button class="btn-e" onclick="changeImage('E')">🟣 E</button>
-
-    <div id="debug">📱 Page chargée</div>
 
     <script>
-        var isLocked = false;
-        var sensorsReady = false;
-        var gammaRef = 0;
-        var alphaRef = 0;
+        // Sélection de l'élément d'affichage
+        const displayElement = document.getElementById('display');
 
-        function log(msg) {
-            document.getElementById('debug').innerHTML = msg + '<br>' + document.getElementById('debug').innerHTML;
+        // Sélection de toutes les zones
+        const zones = document.querySelectorAll('.zone');
+
+        // Fonction pour afficher le chiffre
+        function showNumber(number) {
+            displayElement.innerText = number;
+            displayElement.style.opacity = "1"; // Rend le chiffre bien visible
         }
 
-        function changeImage(letter) {
-            log('👤 Clic bouton: ' + letter);
-            
-            // Cacher toutes
-            document.getElementById('img-a').classList.remove('show');
-            document.getElementById('img-b').classList.remove('show');
-            document.getElementById('img-c').classList.remove('show');
-            document.getElementById('img-d').classList.remove('show');
-            document.getElementById('img-e').classList.remove('show');
-            
-            // Montrer une
-            document.getElementById('img-' + letter.toLowerCase()).classList.add('show');
-            
-            // Verrouiller
-            isLocked = true;
-            document.getElementById('status').textContent = '🔒 VERROUILLÉ';
-            document.getElementById('status').classList.add('locked');
-            
-            // Désactiver TOUS les boutons
-            var allButtons = document.querySelectorAll('button');
-            for (var i = 0; i < allButtons.length; i++) {
-                allButtons[i].disabled = true;
-            }
-            
-            log('✅ Image ' + letter + ' affichée + VERROUILLÉ');
+        // Fonction pour cacher le chiffre (optionnel, quand on relâche)
+        function hideNumber() {
+            displayElement.style.opacity = "0.2"; // Retourne à l'état transparent
         }
 
-        async function activate() {
-            log('🔑 Demande permission...');
-            
-            var granted = false;
-                        if (typeof DeviceOrientationEvent !== 'undefined' && 
-                typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    var response = await DeviceOrientationEvent.requestPermission();
-                    granted = (response === 'granted');
-                    log(granted ? '✅ Permission accordée' : '❌ Permission refusée');
-                } catch (e) {
-                    log('❌ Erreur: ' + e.message);
-                    return;
-                }
-            } else {
-                granted = true;
-                log('✅ Android - pas de permission');
-            }
-            
-            if (!granted) return;
-            
-            // Cacher le bouton activer
-            document.getElementById('btn-permission').style.display = 'none';
-            
-            // Afficher image A
-            changeImage('A');
-            
-            // Attendre 4 secondes puis déverrouiller
-            var seconds = 4;
-            document.getElementById('status').textContent = '⏳ ' + seconds + 's...';
-            
-            var countdown = setInterval(function() {
-                seconds--;
-                if (seconds > 0) {
-                    document.getElementById('status').textContent = '⏳ ' + seconds + 's...';
-                } else {
-                    clearInterval(countdown);
-                    
-                    // DÉVERROUILLER
-                    isLocked = false;
-                    sensorsReady = true;
-                    document.getElementById('status').textContent = '🎯 BOUGE TON TÉLÉPHONE!';
-                    document.getElementById('status').classList.remove('locked');
-                    
-                    // Réactiver les boutons
-                    var allButtons = document.querySelectorAll('button');
-                    for (var i = 0; i < allButtons.length; i++) {
-                        allButtons[i].disabled = false;
-                    }
-                    document.getElementById('btn-permission').style.display = 'block';
-                    
-                    log('✅ CAPTEURS ACTIFS - Boutons réactivés');
-                }
-            }, 1000);            
-            // Activer écouteur capteurs
-            window.addEventListener('deviceorientation', function(event) {
-                if (!sensorsReady || isLocked) return;
-                
-                var gamma = event.gamma || 0;
-                var alpha = event.alpha || 0;
-                
-                if (alpha > 180) alpha = alpha - 360;
-                
-                document.getElementById('gamma').textContent = Math.round(gamma) + '°';
-                document.getElementById('alpha').textContent = Math.round(alpha) + '°';
-                
-                var gammaRel = gamma - gammaRef;
-                var alphaRel = alpha - alphaRef;
-                
-                var newImg = null;
-                
-                if (gammaRel < -15) newImg = 'B';
-                else if (gammaRel > 15) newImg = 'C';
-                else if (alphaRel > 20) newImg = 'D';
-                else if (alphaRel < -20) newImg = 'E';
-                
-                if (newImg) {
-                    log('🎯 Seuil atteint: ' + newImg);
-                    changeImage(newImg);
-                }
+        // On ajoute les écouteurs d'événements sur chaque zone
+        zones.forEach(zone => {
+            const number = zone.getAttribute('data-number');
+
+            // Événement pour la souris (PC) : mousedown (appuyer sans relâcher)
+            zone.addEventListener('mousedown', () => {
+                showNumber(number);
             });
-            
-            log('✅ Écouteur capteurs activé');
-        }
+            // Événement pour le tactile (Mobile) : touchstart
+            zone.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Empêche le zoom ou le scroll
+                showNumber(number);
+            });
+
+            // Optionnel : Quand on relâche, on peut effacer ou diminuer l'opacité
+            zone.addEventListener('mouseup', hideNumber);
+            zone.addEventListener('touchend', hideNumber);
+            zone.addEventListener('mouseleave', hideNumber); // Si la souris sort de la zone
+        });
     </script>
+
 </body>
 </html>
