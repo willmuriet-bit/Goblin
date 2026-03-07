@@ -3,214 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Magique</title>
+    <title>Test Rotation</title>
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background-color: #1a1a1a;
             color: white;
             font-family: Arial, sans-serif;
-            min-height: 100vh;
         }
 
         #image-container {
-            width: 280px;
-            height: 280px;
-            border-radius: 15px;
-            overflow: hidden;
-            background-color: #333;
+            width: 250px;
+            height: 250px;
             margin: 20px auto;
-            border: 3px solid #555;
+            border: 5px solid #00ff00;
+            background-color: #333;
+            position: relative;
         }
 
-        img {
+        .my-image {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
         }
 
-        img.active {
-            display: block;
+        .my-image.show {
+            opacity: 1;
+            visibility: visible;
         }
 
-        #permission-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 15px 30px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        #info {            background-color: #2a2a2a;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-            font-family: monospace;
-            font-size: 14px;
-        }
-
-        .value {
-            color: #00ff00;
-            font-weight: bold;
-        }
-
-        .warning {
-            color: #ffaa00;
-        }
-
-        .good {
-            color: #00ff00;
-        }
-
-        #mode-toggle {
+        button {
             display: block;
             margin: 10px auto;
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
             border: none;
             border-radius: 25px;
             cursor: pointer;
+        }
+        #btn-permission {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .test-btn {
+            background-color: #28a745;
+            color: white;
+            margin: 5px auto;
+        }
+
+        #debug {
+            background-color: #000;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+
+        .line {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #555;
+            padding-left: 10px;
+        }
+
+        .highlight {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .alert {
+            color: #ff0;
         }
     </style>
 </head>
 <body>
 
-    <button id="permission-btn">🔓 Activer les capteurs</button>
-    <button id="mode-toggle" style="display:none;">🔄 Mode: Strict (à plat requis)</button>
+    <button id="btn-permission">🔓 Activer Capteurs</button>
 
     <div id="image-container">
-        <img id="img-a" src="https://picsum.photos/300/300?random=1" class="active">
-        <img id="img-b" src="https://picsum.photos/300/300?random=2">
-        <img id="img-c" src="https://picsum.photos/300/300?random=3">
+        <img id="img-a" class="my-image show" src="https://picsum.photos/300/300?random=1" alt="A">
+        <img id="img-b" class="my-image" src="https://picsum.photos/300/300?random=2" alt="B">
+        <img id="img-c" class="my-image" src="https://picsum.photos/300/300?random=3" alt="C">
     </div>
 
-    <div id="info">
-        <div>📊 Valeurs des capteurs:</div>
-        <div>Alpha (rotation): <span id="alpha" class="value">-</span>°</div>
-        <div>Beta (inclinaison avant/arrière): <span id="beta" class="value">-</span>°</div>
-        <div>Gamma (inclinaison gauche/droite): <span id="gamma" class="value">-</span>°</div>
-        <br>        <div id="flat-status">📱 Téléphone: <span class="warning">VÉRIFICATION...</span></div>
-        <div id="image-status">🖼️ Image affichée: <span class="value">A</span></div>
-        <div id="zone-status">📍 Zone: <span class="value">-</span></div>
+    <button class="test-btn" onclick="manualShow('A')">🔵 Afficher Image A</button>
+    <button class="test-btn" onclick="manualShow('B')">🟢 Afficher Image B</button>    <button class="test-btn" onclick="manualShow('C')">🔴 Afficher Image C</button>
+
+    <div id="debug">
+        <div class="line">Statut: <span id="status">En attente</span></div>
+        <div class="line">Alpha: <span id="alpha">-</span>°</div>
+        <div class="line">Beta: <span id="beta">-</span>°</div>
+        <div class="line">Gamma: <span id="gamma">-</span>°</div>
+        <div class="line highlight">Image active: <span id="current-img">A</span></div>
+        <div class="line">Zone détectée: <span id="zone">-</span></div>
+        <div class="line alert" id="log"></div>
     </div>
 
     <script>
-        const btn = document.getElementById('permission-btn');
-        const modeToggle = document.getElementById('mode-toggle');
-        
-        const alphaSpan = document.getElementById('alpha');
-        const betaSpan = document.getElementById('beta');
-        const gammaSpan = document.getElementById('gamma');
-        const flatStatus = document.getElementById('flat-status');
-        const imageStatus = document.getElementById('image-status');
-        const zoneStatus = document.getElementById('zone-status');
+        let sensorsActive = false;
+        const logDiv = document.getElementById('log');
 
-        const imgA = document.getElementById('img-a');
-        const imgB = document.getElementById('img-b');
-        const imgC = document.getElementById('img-c');
+        // TEST MANUEL - Pour vérifier que le changement d'image fonctionne
+        function manualShow(letter) {
+            console.log('Test manuel: affichage image', letter);
+            logDiv.textContent = ' TEST MANUEL: Image ' + letter;
+            
+            // Cacher toutes les images
+            document.querySelectorAll('.my-image').forEach(img => {
+                img.classList.remove('show');
+            });
+            
+            // Montrer la bonne
+            const targetImg = document.getElementById('img-' + letter.toLowerCase());
+            if (targetImg) {
+                targetImg.classList.add('show');
+                document.getElementById('current-img').textContent = letter;
+                console.log('✅ Image', letter, 'affichée');
+            } else {
+                console.error('❌ Image', letter, 'non trouvée!');
+            }
+        }
 
-        let strictMode = true; // true = téléphone doit être à plat
-
-        btn.addEventListener('click', async function() {
+        // Activation des capteurs
+        document.getElementById('btn-permission').addEventListener('click', async function() {
+            logDiv.textContent = '🔄 Activation...';
+            
             if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const response = await DeviceOrientationEvent.requestPermission();
                     if (response === 'granted') {
-                        startSensors();
+                        activateSensors();
                     } else {
-                        alert('Permission refusée');
-                    }
-                } catch (e) {
-                    alert('Erreur: ' + e);
+                        logDiv.textContent = '❌ Permission refusée';
+                    }                } catch (e) {
+                    logDiv.textContent = '❌ Erreur: ' + e.message;
                 }
             } else {
-                startSensors();
+                activateSensors();
             }
         });
 
-        modeToggle.addEventListener('click', function() {
-            strictMode = !strictMode;
-            modeToggle.textContent = strictMode ? 
-                '🔄 Mode: Strict (à plat requis)' : 
-                '🔄 Mode: Libre (rotation seule)';
-            modeToggle.style.backgroundColor = strictMode ? '#28a745' : '#dc3545';
-        });
-
-        function startSensors() {
-            btn.style.display = 'none';            modeToggle.style.display = 'block';
-            window.addEventListener('deviceorientation', handleOrientation);
-        }
-
-        function handleOrientation(event) {
-            const alpha = event.alpha || 0;
-            const beta = event.beta || 0;
-            const gamma = event.gamma || 0;
-
-            // Mise à jour affichage
-            alphaSpan.textContent = Math.round(alpha);
-            betaSpan.textContent = Math.round(beta);
-            gammaSpan.textContent = Math.round(gamma);
-
-            // Vérifier si téléphone à plat
-            const isFlat = Math.abs(beta) < 45 && Math.abs(gamma) < 45;
+        function activateSensors() {
+            sensorsActive = true;
+            document.getElementById('status').textContent = '✅ ACTIF';
+            document.getElementById('status').style.color = '#00ff00';
+            document.getElementById('btn-permission').style.display = 'none';
+            logDiv.textContent = '✅ Capteurs actifs! Tourne ton téléphone';
             
-            if (isFlat) {
-                flatStatus.innerHTML = '📱 Téléphone: <span class="good">À PLAT ✅</span>';
-            } else {
-                flatStatus.innerHTML = '📱 Téléphone: <span class="warning">PAS À PLAT ⚠️</span><br><small>(Beta: ' + 
-                    Math.round(beta) + '°, Gamma: ' + Math.round(gamma) + '°)</small>';
-            }
+            window.addEventListener('deviceorientation', function(event) {
+                const alpha = event.alpha || 0;
+                const beta = event.beta || 0;
+                const gamma = event.gamma || 0;
 
-            // Normaliser alpha entre -180 et 180
-            let normalizedAlpha = alpha;
-            if (normalizedAlpha > 180) {
-                normalizedAlpha = normalizedAlpha - 360;
-            }
+                // Afficher les valeurs
+                document.getElementById('alpha').textContent = Math.round(alpha);
+                document.getElementById('beta').textContent = Math.round(beta);
+                document.getElementById('gamma').textContent = Math.round(gamma);
 
-            // Déterminer la zone
-            let zone = '';
-            let imageToShow = 'A';
-
-            if (!strictMode || isFlat) {
-                if (normalizedAlpha > -45 && normalizedAlpha < 45) {
-                    zone = 'CENTRE (-45° à +45°)';
-                    imageToShow = 'A';
-                } else if (normalizedAlpha <= -45 && normalizedAlpha > -135) {
-                    zone = 'GAUCHE (-45° à -135°)';
-                    imageToShow = 'B';
-                } else if (normalizedAlpha >= 45 && normalizedAlpha < 135) {
-                    zone = 'DROITE (+45° à +135°)';
-                    imageToShow = 'C';
-                } else {
-                    zone = 'ARRIÈRE (>135° ou <-135°)';
-                    imageToShow = 'A';
+                // Normaliser alpha
+                let normalizedAlpha = alpha;
+                if (normalizedAlpha > 180) {
+                    normalizedAlpha = normalizedAlpha - 360;
                 }
 
-                // Changer l'image                showImage(imageToShow);
-                imageStatus.innerHTML = '🖼️ Image affichée: <span class="value">' + imageToShow + '</span>';
-                zoneStatus.innerHTML = '📍 Zone: <span class="value">' + zone + '</span>';
-            } else {
-                zoneStatus.innerHTML = '📍 Zone: <span class="warning">Attends que le téléphone soit à plat</span>';
+                // Déterminer la zone
+                let zone = '';
+                let targetImage = 'A';
+
+                // Zone très large pour tester
+                if (normalizedAlpha >= -60 && normalizedAlpha < 60) {
+                    zone = 'CENTRE (-60° à 60°)';
+                    targetImage = 'A';
+                } else if (normalizedAlpha >= 60 && normalizedAlpha < 150) {
+                    zone = 'DROITE (60° à 150°)';
+                    targetImage = 'C';
+                } else if (normalizedAlpha >= 150 || normalizedAlpha < -150) {
+                    zone = 'ARRIÈRE (>150° ou <-150°)';
+                    targetImage = 'A';
+                } else if (normalizedAlpha >= -150 && normalizedAlpha < -60) {
+                    zone = 'GAUCHE (-150° à -60°)';
+                    targetImage = 'B';
+                }
+                document.getElementById('zone').textContent = zone;
+
+                // CHANGER L'IMAGE
+                changeImage(targetImage);
+            });
+        }
+
+        function changeImage(letter) {
+            const currentDisplayed = document.getElementById('current-img').textContent;
+            
+            // Seulement changer si différent
+            if (currentDisplayed !== letter) {
+                console.log('🔄 Changement de', currentDisplayed, 'vers', letter);
+                logDiv.textContent = '🔄 Changement: ' + currentDisplayed + ' → ' + letter;
+                
+                // Cacher tout
+                document.querySelectorAll('.my-image').forEach(img => {
+                    img.classList.remove('show');
+                });
+                
+                // Afficher la nouvelle
+                const newImg = document.getElementById('img-' + letter.toLowerCase());
+                if (newImg) {
+                    newImg.classList.add('show');
+                    document.getElementById('current-img').textContent = letter;
+                    console.log('✅ Image', letter, 'maintenant affichée');
+                }
             }
         }
 
-        function showImage(letter) {
-            imgA.classList.remove('active');
-            imgB.classList.remove('active');
-            imgC.classList.remove('active');
-
-            if (letter === 'A') imgA.classList.add('active');
-            if (letter === 'B') imgB.classList.add('active');
-            if (letter === 'C') imgC.classList.add('active');
-        }
+        // Test au chargement
+        console.log('📱 Page chargée');
+        console.log('Images trouvées:', {
+            A: document.getElementById('img-a'),
+            B: document.getElementById('img-b'),
+            C: document.getElementById('img-c')
+        });
     </script>
 </body>
 </html>
