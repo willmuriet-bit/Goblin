@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Gamma + Beta - Version Beta Corrigée</title>
+    <title>Rotation Gamma + Beta - Version Stabilisée</title>
     <style>
         body {
             margin: 0;
@@ -141,11 +141,16 @@
             text-align: center;
         }
 
+        .counter-box.unstable {
+            border: 2px solid #ff0000;
+            background-color: #3a1a1a;
+        }
         .counter-title {
             font-size: 13px;
             color: #aaa;
             margin-bottom: 5px;
         }
+
         .counter-value {
             font-size: 26px;
             font-weight: bold;
@@ -189,11 +194,11 @@
             box-shadow: 0 0 15px currentColor;
         }
 
-        .zone-a { background-color: #00ff00; color: black; }
-        .zone-b { background-color: #ff6b6b; color: white; }
+        .zone-a { background-color: #00ff00; color: black; }        .zone-b { background-color: #ff6b6b; color: white; }
         .zone-c { background-color: #4ecdc4; color: white; }
         .zone-d { background-color: #ff9ff3; color: black; }
         .zone-e { background-color: #54a0ff; color: white; }
+
         .status-box {
             background-color: #1a4a1a;
             border: 2px solid #00ff00;
@@ -238,17 +243,33 @@
         .stability-fill {
             height: 100%;
             background-color: #00ff00;
-            width: 0%;
-            transition: width 0.1s;
+            width: 0%;            transition: width 0.1s;
         }
 
         .dominant-axis {
-            text-align: center;            margin: 10px 0;
+            text-align: center;
+            margin: 10px 0;
             padding: 10px;
             background-color: #3a1a4a;
             border: 2px solid #ff00ff;
             border-radius: 10px;
             font-weight: bold;
+        }
+
+        .beta-warning {
+            background-color: #4a2a0a;
+            border: 2px solid #ffaa00;
+            color: #ffaa00;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 13px;
+            display: none;
+        }
+
+        .beta-warning.visible {
+            display: block;
         }
     </style>
 </head>
@@ -266,9 +287,12 @@
 
     <div class="info-box">
         📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
-        🎯 Seuil: <strong>25°</strong> | Stabilité: <strong>500ms</strong>
+        🎯 Seuil: <strong>25°</strong> | Filtrage: <strong>MAXI</strong>
     </div>
 
+    <div class="beta-warning" id="beta-warning">
+        ⚠️ BETA INSTABLE - Valeurs ignorées temporairement
+    </div>
     <div id="image-container">
         <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
         <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
@@ -292,7 +316,8 @@
         </div>
     </div>
 
-    <div class="threshold-indicator">        <div>ZONES ACTIVES:</div>
+    <div class="threshold-indicator">
+        <div>ZONES ACTIVES:</div>
         <div class="threshold-bar">
             <div class="threshold-zone zone-b" id="zone-b">B ← Gauche</div>
             <div class="threshold-zone zone-a" id="zone-a">A Centre</div>
@@ -305,18 +330,17 @@
     </div>
 
     <div class="counters-container">
-        <div class="counter-box">
+        <div class="counter-box" id="gamma-box">
             <div class="counter-title">📐 GAMMA (Gauche/Droite)</div>
             <div id="gamma-value" class="counter-value gamma-zero">0°</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
         </div>
-        <div class="counter-box">
+        <div class="counter-box" id="beta-box">
             <div class="counter-title">📏 BETA (Haut/Bas)</div>
             <div id="beta-value" class="counter-value beta-zero">0°</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
         </div>
     </div>
-
     <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A</button>
     <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B</button>
     <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Image C</button>
@@ -327,8 +351,9 @@
         <div class="line">⚡ Statut: <span id="status">En attente</span></div>
         <div class="line">🔐 Verrou: <span id="lock-status" class="unlocked">DÉVERROUILLÉ</span></div>
         <div class="line">📐 Gamma brut: <span id="gamma-raw">-</span>°</div>
-        <div class="line">📐 Gamma relatif: <span id="gamma-rel" class="highlight">0°</span></div>
+        <div class="line">📐 Gamma filtré: <span id="gamma-filtered" class="highlight">0°</span></div>
         <div class="line">📏 Beta brut: <span id="beta-raw">-</span>°</div>
+        <div class="line">📏 Beta filtré: <span id="beta-filtered" class="highlight">0°</span></div>
         <div class="line">📏 Beta relatif: <span id="beta-rel" class="highlight">0°</span></div>
         <div class="line">🖼️ Image actuelle: <span id="current-img" class="highlight">A</span></div>
         <div class="line">🎯 Zone détectée: <span id="detected-zone" class="warning">-</span></div>
@@ -341,15 +366,23 @@
         let isLocked = false;
         let isPermanentlyLocked = false;
         let lockTimeout = null;
-        let countdownInterval = null;        
+        let countdownInterval = null;
+        
         // Références
         let gammaRef = 0;
         let betaRef = 0;
         
-        // Historique pour filtrage
+        // NOUVEAU: Historique PLUS LONG pour filtrage agressif
         let gammaHist = [];
         let betaHist = [];
-        const HIST_SIZE = 3;
+        const HIST_SIZE = 10;  // Augmenté de 3 à 10 pour plus de stabilité
+        
+        // NOUVEAU: Détection de sauts Beta
+        let lastBetaValue = 0;
+        let betaJumpCount = 0;
+        let betaIsUnstable = false;
+        const BETA_JUMP_THRESHOLD = 50;  // Si changement > 50° = saut
+        const BETA_UNSTABLE_COUNT = 3;   // Après 3 sauts, Beta est marqué instable
         
         // Seuils
         const THRESHOLD_ENTRY = 25;
@@ -358,31 +391,67 @@
         let pendingZone = null;
         
         const LOCK_DURATION = 4000;
-
-        // Filtrage des valeurs
+        // Filtrage MOYENNE MOBILE (plus efficace avec 10 valeurs)
         function smooth(value, hist) {
             hist.push(value);
-            if (hist.length > HIST_SIZE) hist.shift();
+            if (hist.length > HIST_SIZE) {
+                hist.shift();
+            }
             return hist.reduce((a, b) => a + b, 0) / hist.length;
+        }
+
+        // NOUVEAU: Détection et rejection des sauts Beta
+        function filterBetaJumps(currentBeta) {
+            const diff = Math.abs(currentBeta - lastBetaValue);
+            
+            // Détecter les sauts anormaux
+            if (diff > BETA_JUMP_THRESHOLD && lastBetaValue !== 0) {
+                betaJumpCount++;
+                console.warn(`⚠️ Saut Beta détecté: ${lastBetaValue}° → ${currentBeta}° (diff: ${diff}°)`);
+                
+                // Si trop de sauts, marquer Beta comme instable
+                if (betaJumpCount >= BETA_UNSTABLE_COUNT) {
+                    betaIsUnstable = true;
+                    document.getElementById('beta-warning').classList.add('visible');
+                    document.getElementById('beta-box').classList.add('unstable');
+                    console.warn('🚫 Beta marqué comme INSTABLE');
+                }
+                
+                // Retourner la dernière valeur stable au lieu de la nouvelle
+                return lastBetaValue;
+            }
+            
+            // Pas de saut, valeur normale
+            if (diff < 10) {
+                betaJumpCount = Math.max(0, betaJumpCount - 1);  // Décrémenter lentement
+            }
+            
+            // Si Beta redevient stable
+            if (betaJumpCount === 0) {
+                betaIsUnstable = false;
+                document.getElementById('beta-warning').classList.remove('visible');
+                document.getElementById('beta-box').classList.remove('unstable');
+            }
+            
+            lastBetaValue = currentBeta;
+            return currentBeta;
         }
 
         // Normaliser Gamma entre -90 et 90
         function normalizeGamma(angle) {
-            if (angle > 90) angle = 90;
-            if (angle < -90) angle = -90;
-            return angle;
-        }
-
-        // Normaliser Beta entre -180 et 180 (PLUS DE CORRECTION AGRESSIVE)
-        function normalizeBeta(angle) {
-            // Beta peut aller de -180 à 180
-            // On garde la valeur telle quelle, pas de correction automatique
+            if (angle > 90) angle = 90;            if (angle < -90) angle = -90;
             return angle;
         }
 
         function getDominantAxis(gamma, beta) {
             const absGamma = Math.abs(gamma);
             const absBeta = Math.abs(beta);
+            
+            // Si Beta est instable, on ignore complètement
+            if (betaIsUnstable) {
+                document.getElementById('axis-name').textContent = '📐 GAMMA uniquement (Beta instable)';
+                return absGamma > THRESHOLD_ENTRY ? 'gamma' : 'none';
+            }
             
             if (absGamma > absBeta && absGamma > THRESHOLD_ENTRY) {
                 return 'gamma';
@@ -391,6 +460,7 @@
             }
             return 'none';
         }
+
         function updateZones(gamma, beta) {
             document.querySelectorAll('.threshold-zone').forEach(z => z.classList.remove('active'));
             
@@ -398,13 +468,8 @@
             let dominantAxis = 'none';
             
             dominantAxis = getDominantAxis(gamma, beta);
-            document.getElementById('axis-name').textContent = dominantAxis === 'gamma' ? 
-                '📐 GAMMA (Gauche/Droite)' : 
-                dominantAxis === 'beta' ? 
-                '📏 BETA (Haut/Bas)' : 
-                'Aucun (Centre)';
             
-            if (dominantAxis === 'beta') {
+            if (dominantAxis === 'beta' && !betaIsUnstable) {
                 if (beta > THRESHOLD_ENTRY) activeZone = 'd';
                 else if (beta < -THRESHOLD_ENTRY) activeZone = 'e';
             } else if (dominantAxis === 'gamma') {
@@ -423,8 +488,7 @@
             const stabilityText = document.getElementById('stability-text');
             
             if (isStable) {
-                const elapsed = Date.now() - stableStartTime;
-                const percentage = Math.min((elapsed / STABILITY_TIME) * 100, 100);
+                const elapsed = Date.now() - stableStartTime;                const percentage = Math.min((elapsed / STABILITY_TIME) * 100, 100);
                 stabilityFill.style.width = percentage + '%';
                 stabilityFill.style.backgroundColor = '#00ff00';
                 stabilityText.textContent = Math.round(elapsed) + 'ms / ' + STABILITY_TIME + 'ms';
@@ -439,7 +503,8 @@
             }
         }
 
-        function lockRotations(temporary = true) {            isLocked = true;
+        function lockRotations(temporary = true) {
+            isLocked = true;
             isPermanentlyLocked = !temporary;
             
             const lockIndicator = document.getElementById('lock-indicator');
@@ -472,8 +537,7 @@
                     countdownEl.textContent = Math.ceil(remaining) + 's';
                     progressFill.style.width = (remaining / 4 * 100) + '%';
                 }, 100);
-                
-                if (lockTimeout) clearTimeout(lockTimeout);
+                                if (lockTimeout) clearTimeout(lockTimeout);
                 lockTimeout = setTimeout(() => {
                     unlockRotations();
                     if (countdownInterval) clearInterval(countdownInterval);
@@ -488,7 +552,8 @@
         function unlockRotations() {
             isLocked = false;
             isPermanentlyLocked = false;
-                        gammaRef = window.lastGamma || 0;
+            
+            gammaRef = window.lastGamma || 0;
             betaRef = window.lastBeta || 0;
             
             console.log('✅ Déverrouillé - GammaRef:', gammaRef, 'BetaRef:', betaRef);
@@ -521,8 +586,7 @@
         }
 
         function updateBetaDisplay(value) {
-            const el = document.getElementById('beta-value');
-            el.textContent = Math.round(value) + '°';
+            const el = document.getElementById('beta-value');            el.textContent = Math.round(value) + '°';
             el.classList.remove('beta-positive', 'beta-negative', 'beta-zero');
             if (value > 5) el.classList.add('beta-positive');
             else if (value < -5) el.classList.add('beta-negative');
@@ -537,7 +601,8 @@
                 img.classList.remove('show');
             });
             
-            const newImg = document.getElementById('img-' + zone.toLowerCase());            if (newImg) {
+            const newImg = document.getElementById('img-' + zone.toLowerCase());
+            if (newImg) {
                 newImg.classList.add('show');
                 document.getElementById('current-img').textContent = zone;
                 updateZones(0, 0);
@@ -564,8 +629,14 @@
             updateZones(0, 0);
             document.getElementById('zone-' + letter.toLowerCase()).classList.add('active');
             
+            // Réinitialiser TOUT les historiques
             gammaHist = [];
             betaHist = [];
+            betaJumpCount = 0;
+            betaIsUnstable = false;
+            lastBetaValue = 0;
+                        document.getElementById('beta-warning').classList.remove('visible');
+            document.getElementById('beta-box').classList.remove('unstable');
             
             lockRotations(true);
         }
@@ -586,7 +657,8 @@
                 } catch (e) {
                     alert('Erreur: ' + e.message);
                 }
-            } else {                activateSensors();
+            } else {
+                activateSensors();
                 setTimeout(() => {
                     manualShow('A');
                 }, 500);
@@ -606,16 +678,17 @@
                 let rawBeta = event.beta;
                 
                 // Gérer les valeurs nulles
-                if (rawGamma === null) rawGamma = 0;
-                if (rawBeta === null) rawBeta = 0;
+                if (rawGamma === null || rawGamma === undefined) rawGamma = 0;
+                if (rawBeta === null || rawBeta === undefined) rawBeta = 0;
                 
-                // Normaliser (SANS correction aggressive)
+                // Normaliser Gamma
                 rawGamma = normalizeGamma(rawGamma);
-                rawBeta = normalizeBeta(rawBeta);
+                
+                // FILTRER les sauts Beta AVANT tout traitement                let filteredBeta = filterBetaJumps(rawBeta);
                 
                 // Stocker
                 window.lastGamma = rawGamma;
-                window.lastBeta = rawBeta;
+                window.lastBeta = filteredBeta;
                 
                 // Afficher valeurs brutes
                 document.getElementById('gamma-raw').textContent = Math.round(rawGamma);
@@ -625,9 +698,9 @@
                     return;
                 }
 
-                // Lisser les valeurs
+                // Lisser les valeurs (moyenne mobile sur 10 valeurs)
                 const smoothGamma = smooth(rawGamma, gammaHist);
-                const smoothBeta = smooth(rawBeta, betaHist);
+                const smoothBeta = smooth(filteredBeta, betaHist);
 
                 // Calcul relatif par rapport à la référence
                 let gammaRel = smoothGamma - gammaRef;
@@ -635,8 +708,10 @@
                 
                 // Limiter Gamma entre -90 et 90
                 gammaRel = normalizeGamma(gammaRel);
-                // Afficher valeurs relatives
-                document.getElementById('gamma-rel').textContent = Math.round(gammaRel) + '°';
+
+                // Afficher valeurs filtrées
+                document.getElementById('gamma-filtered').textContent = Math.round(smoothGamma) + '°';
+                document.getElementById('beta-filtered').textContent = Math.round(smoothBeta) + '°';
                 document.getElementById('beta-rel').textContent = Math.round(betaRel) + '°';
                 updateGammaDisplay(gammaRel);
                 updateBetaDisplay(betaRel);
@@ -658,8 +733,7 @@
                     updateStability(potentialZone, true);
                     
                     if (elapsed >= STABILITY_TIME) {
-                        console.log('✅ Changement:', currentImg, '→', potentialZone);
-                        changeImage(potentialZone);
+                        console.log('✅ Changement:', currentImg, '→', potentialZone);                        changeImage(potentialZone);
                         pendingZone = null;
                     }
                 } else {
@@ -669,7 +743,7 @@
             });
         }
 
-        console.log('📱 Page chargée - Beta corrigé!');
+        console.log('📱 Page chargée - Beta ultra-stabilisé!');
     </script>
 </body>
 </html>
