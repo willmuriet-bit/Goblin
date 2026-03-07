@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Rotation</title>
+    <title>Rotation avec Verrouillage</title>
     <style>
         body {
             margin: 0;
@@ -20,6 +20,8 @@
             border: 5px solid #00ff00;
             background-color: #333;
             position: relative;
+            border-radius: 15px;
+            overflow: hidden;
         }
 
         .my-image {
@@ -30,7 +32,7 @@
             left: 0;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s;
+            transition: opacity 0.5s;
         }
 
         .my-image.show {
@@ -40,13 +42,14 @@
 
         button {
             display: block;
-            margin: 10px auto;
+            margin: 8px auto;
             padding: 12px 24px;
             font-size: 16px;
             border: none;
             border-radius: 25px;
-            cursor: pointer;
+            cursor: pointer;            font-weight: bold;
         }
+
         #btn-permission {
             background-color: #007bff;
             color: white;
@@ -56,6 +59,12 @@
             background-color: #28a745;
             color: white;
             margin: 5px auto;
+        }
+
+        .test-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         #debug {
@@ -80,12 +89,65 @@
             font-size: 16px;
         }
 
-        .alert {
+        .locked {
             color: #ff0;
+            font-weight: bold;
+        }
+
+        .unlocked {
+            color: #0f0;
+            font-weight: bold;        }
+
+        #lock-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 165, 0, 0.9);
+            color: black;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            display: none;
+            z-index: 9999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #lock-indicator.active {
+            display: block;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background-color: #333;
+            margin-top: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #ff9500;
+            width: 100%;
+            transition: width 0.1s linear;
         }
     </style>
 </head>
 <body>
+
+    <div id="lock-indicator">
+        🔒 VERROUILLÉ<br>
+        <small id="countdown">10s</small>
+        <div class="progress-bar">            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+    </div>
 
     <button id="btn-permission">🔓 Activer Capteurs</button>
 
@@ -95,48 +157,102 @@
         <img id="img-c" class="my-image" src="https://picsum.photos/300/300?random=3" alt="C">
     </div>
 
-    <button class="test-btn" onclick="manualShow('A')">🔵 Afficher Image A</button>
-    <button class="test-btn" onclick="manualShow('B')">🟢 Afficher Image B</button>    <button class="test-btn" onclick="manualShow('C')">🔴 Afficher Image C</button>
+    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Afficher Image A</button>
+    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Afficher Image B</button>
+    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Afficher Image C</button>
 
     <div id="debug">
-        <div class="line">Statut: <span id="status">En attente</span></div>
+        <div class="line">Statut capteurs: <span id="status">En attente</span></div>
+        <div class="line">État: <span id="lock-status" class="unlocked">🔓 DÉVERROUILLÉ</span></div>
         <div class="line">Alpha: <span id="alpha">-</span>°</div>
-        <div class="line">Beta: <span id="beta">-</span>°</div>
-        <div class="line">Gamma: <span id="gamma">-</span>°</div>
-        <div class="line highlight">Image active: <span id="current-img">A</span></div>
-        <div class="line">Zone détectée: <span id="zone">-</span></div>
-        <div class="line alert" id="log"></div>
+        <div class="line">Image active: <span id="current-img" class="highlight">A</span></div>
+        <div class="line">Mode: <span id="mode">Rotation inactive</span></div>
     </div>
 
     <script>
         let sensorsActive = false;
-        const logDiv = document.getElementById('log');
+        let isLocked = false;
+        let lockTimeout = null;
+        const LOCK_DURATION = 10000; // 10 secondes en millisecondes
 
-        // TEST MANUEL - Pour vérifier que le changement d'image fonctionne
-        function manualShow(letter) {
-            console.log('Test manuel: affichage image', letter);
-            logDiv.textContent = ' TEST MANUEL: Image ' + letter;
+        // Fonction pour verrouiller les rotations
+        function lockRotations() {
+            isLocked = true;
             
-            // Cacher toutes les images
+            // Afficher l'indicateur de verrouillage
+            const lockIndicator = document.getElementById('lock-indicator');
+            const countdown = document.getElementById('countdown');
+            const progressFill = document.getElementById('progress-fill');
+            
+            lockIndicator.classList.add('active');
+            
+            // Mettre à jour le statut
+            document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
+            document.getElementById('lock-status').className = 'locked';
+            document.getElementById('mode').textContent = 'Attente 10s...';
+            
+            // Désactiver les boutons
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.disabled = true;
+            });            
+            // Animation du compte à rebours
+            let remaining = 10;
+            countdown.textContent = remaining + 's';
+            progressFill.style.width = '100%';
+            
+            const countdownInterval = setInterval(() => {
+                remaining -= 0.1;
+                const seconds = Math.ceil(remaining);
+                countdown.textContent = seconds + 's';
+                progressFill.style.width = (remaining / 10 * 100) + '%';
+            }, 100);
+            
+            // Déverrouiller après 10 secondes
+            if (lockTimeout) clearTimeout(lockTimeout);
+            lockTimeout = setTimeout(() => {
+                unlockRotations();
+                clearInterval(countdownInterval);
+            }, LOCK_DURATION);
+        }
+
+        // Fonction pour déverrouiller
+        function unlockRotations() {
+            isLocked = false;
+            
+            // Cacher l'indicateur
+            document.getElementById('lock-indicator').classList.remove('active');
+            
+            // Mettre à jour le statut
+            document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ';
+            document.getElementById('lock-status').className = 'unlocked';
+            document.getElementById('mode').textContent = 'Rotation ACTIVE';
+            
+            // Réactiver les boutons
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+
+        // Affichage manuel d'une image
+        function manualShow(letter) {
+            console.log('👤 Manuel: affichage image', letter);
+            
+            // Changer l'image
             document.querySelectorAll('.my-image').forEach(img => {
                 img.classList.remove('show');
             });
             
-            // Montrer la bonne
             const targetImg = document.getElementById('img-' + letter.toLowerCase());
-            if (targetImg) {
-                targetImg.classList.add('show');
+            if (targetImg) {                targetImg.classList.add('show');
                 document.getElementById('current-img').textContent = letter;
-                console.log('✅ Image', letter, 'affichée');
-            } else {
-                console.error('❌ Image', letter, 'non trouvée!');
             }
+            
+            // VERROUILLER pendant 10 secondes
+            lockRotations();
         }
 
         // Activation des capteurs
         document.getElementById('btn-permission').addEventListener('click', async function() {
-            logDiv.textContent = '🔄 Activation...';
-            
             if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
@@ -144,9 +260,10 @@
                     if (response === 'granted') {
                         activateSensors();
                     } else {
-                        logDiv.textContent = '❌ Permission refusée';
-                    }                } catch (e) {
-                    logDiv.textContent = '❌ Erreur: ' + e.message;
+                        alert('Permission refusée');
+                    }
+                } catch (e) {
+                    alert('Erreur: ' + e.message);
                 }
             } else {
                 activateSensors();
@@ -158,7 +275,7 @@
             document.getElementById('status').textContent = '✅ ACTIF';
             document.getElementById('status').style.color = '#00ff00';
             document.getElementById('btn-permission').style.display = 'none';
-            logDiv.textContent = '✅ Capteurs actifs! Tourne ton téléphone';
+            document.getElementById('mode').textContent = 'Rotation ACTIVE';
             
             window.addEventListener('deviceorientation', function(event) {
                 const alpha = event.alpha || 0;
@@ -167,70 +284,47 @@
 
                 // Afficher les valeurs
                 document.getElementById('alpha').textContent = Math.round(alpha);
-                document.getElementById('beta').textContent = Math.round(beta);
-                document.getElementById('gamma').textContent = Math.round(gamma);
+
+                // SI VERROUILLÉ, on ne fait rien
+                if (isLocked) {
+                    return;
+                }
 
                 // Normaliser alpha
                 let normalizedAlpha = alpha;
-                if (normalizedAlpha > 180) {
-                    normalizedAlpha = normalizedAlpha - 360;
+                if (normalizedAlpha > 180) {                    normalizedAlpha = normalizedAlpha - 360;
                 }
 
                 // Déterminer la zone
-                let zone = '';
                 let targetImage = 'A';
 
-                // Zone très large pour tester
                 if (normalizedAlpha >= -60 && normalizedAlpha < 60) {
-                    zone = 'CENTRE (-60° à 60°)';
                     targetImage = 'A';
                 } else if (normalizedAlpha >= 60 && normalizedAlpha < 150) {
-                    zone = 'DROITE (60° à 150°)';
                     targetImage = 'C';
-                } else if (normalizedAlpha >= 150 || normalizedAlpha < -150) {
-                    zone = 'ARRIÈRE (>150° ou <-150°)';
-                    targetImage = 'A';
                 } else if (normalizedAlpha >= -150 && normalizedAlpha < -60) {
-                    zone = 'GAUCHE (-150° à -60°)';
                     targetImage = 'B';
                 }
-                document.getElementById('zone').textContent = zone;
 
-                // CHANGER L'IMAGE
-                changeImage(targetImage);
+                // Changer l'image seulement si différent
+                const currentDisplayed = document.getElementById('current-img').textContent;
+                if (currentDisplayed !== targetImage) {
+                    document.querySelectorAll('.my-image').forEach(img => {
+                        img.classList.remove('show');
+                    });
+                    
+                    const newImg = document.getElementById('img-' + targetImage.toLowerCase());
+                    if (newImg) {
+                        newImg.classList.add('show');
+                        document.getElementById('current-img').textContent = targetImage;
+                        console.log('🔄 Rotation: Image', targetImage);
+                    }
+                }
             });
         }
 
-        function changeImage(letter) {
-            const currentDisplayed = document.getElementById('current-img').textContent;
-            
-            // Seulement changer si différent
-            if (currentDisplayed !== letter) {
-                console.log('🔄 Changement de', currentDisplayed, 'vers', letter);
-                logDiv.textContent = '🔄 Changement: ' + currentDisplayed + ' → ' + letter;
-                
-                // Cacher tout
-                document.querySelectorAll('.my-image').forEach(img => {
-                    img.classList.remove('show');
-                });
-                
-                // Afficher la nouvelle
-                const newImg = document.getElementById('img-' + letter.toLowerCase());
-                if (newImg) {
-                    newImg.classList.add('show');
-                    document.getElementById('current-img').textContent = letter;
-                    console.log('✅ Image', letter, 'maintenant affichée');
-                }
-            }
-        }
-
-        // Test au chargement
-        console.log('📱 Page chargée');
-        console.log('Images trouvées:', {
-            A: document.getElementById('img-a'),
-            B: document.getElementById('img-b'),
-            C: document.getElementById('img-c')
-        });
+        console.log('📱 Page chargée - Prêt!');
     </script>
+</body>
 </body>
 </html>
