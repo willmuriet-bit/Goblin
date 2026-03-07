@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAPTEURS - VERSION FINALE</title>
+    <title>CAPTEURS - BOUTONS GARANTIS</title>
     <style>
         body {
             margin: 0;
@@ -106,15 +106,6 @@
             border-color: #ff0000;
         }
 
-        .thresholds {
-            background-color: #2a1a3a;
-            border: 2px solid #aa00ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            text-align: center;
-        }
-
         #debug {
             background-color: #000;
             padding: 15px;
@@ -122,29 +113,20 @@
             font-family: monospace;
             font-size: 12px;
             margin-top: 20px;
-            max-height: 200px;
-            overflow-y: auto;
         }
 
-        .log { margin: 3px 0; }
         .ok { color: #00ff00; }
         .err { color: #ff0000; }
-        .warn { color: #ffaa00; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">🎯 CAPTEURS</h2>
+    <h2 style="text-align: center;">🎯 TEST BOUTONS</h2>
 
-    <div id="status">👆 Clique "ACTIVER CAPTEURS"</div>
-
-    <div class="thresholds">
-        <strong>SEUILS:</strong><br>
-        Gamma -15° → B | Gamma +15° → C<br>
-        Alpha +20° → D | Alpha -20° → E
-    </div>
+    <div id="status">Prêt</div>
 
     <button id="btn-permission" onclick="activate()">🔓 ACTIVER CAPTEURS</button>
+
     <div id="image-container">
         <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300">
         <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300">
@@ -163,147 +145,135 @@
             <div id="alpha" class="sensor-value alpha">0°</div>
         </div>
     </div>
+    <button class="btn-a" onclick="changeImage('A')">🔵 A</button>
+    <button class="btn-b" onclick="changeImage('B')">🟢 B</button>
+    <button class="btn-c" onclick="changeImage('C')">🔴 C</button>
+    <button class="btn-d" onclick="changeImage('D')">🟡 D</button>
+    <button class="btn-e" onclick="changeImage('E')">🟣 E</button>
 
-    <button class="btn-a" onclick="showImg('A')">🔵 A</button>
-    <button class="btn-b" onclick="showImg('B')">🟢 B</button>
-    <button class="btn-c" onclick="showImg('C')">🔴 C</button>
-    <button class="btn-d" onclick="showImg('D')">🟡 D</button>
-    <button class="btn-e" onclick="showImg('E')">🟣 E</button>
-
-    <div id="debug"></div>
+    <div id="debug">📱 Page chargée</div>
 
     <script>
-        var locked = false;
-        var ready = false;
+        var isLocked = false;
+        var sensorsReady = false;
         var gammaRef = 0;
         var alphaRef = 0;
 
-        function log(msg, cls) {
-            var d = document.getElementById('debug');
-            var e = document.createElement('div');
-            e.className = 'log ' + (cls || '');
-            e.textContent = msg;
-            d.insertBefore(e, d.firstChild);
+        function log(msg) {
+            document.getElementById('debug').innerHTML = msg + '<br>' + document.getElementById('debug').innerHTML;
         }
 
-        function showImg(letter) {
-            if (locked) {
-                log('🔒 VERROUILLÉ!', 'err');
-                return;
-            }
-            log('👤 Image: ' + letter, 'ok');
+        function changeImage(letter) {
+            log('👤 Clic bouton: ' + letter);
             
-            // Cacher toutes les images
-            document.getElementById('img-a').classList.remove('show');            document.getElementById('img-b').classList.remove('show');
+            // Cacher toutes
+            document.getElementById('img-a').classList.remove('show');
+            document.getElementById('img-b').classList.remove('show');
             document.getElementById('img-c').classList.remove('show');
             document.getElementById('img-d').classList.remove('show');
             document.getElementById('img-e').classList.remove('show');
             
-            // Afficher la bonne
+            // Montrer une
             document.getElementById('img-' + letter.toLowerCase()).classList.add('show');
             
             // Verrouiller
-            locked = true;
+            isLocked = true;
             document.getElementById('status').textContent = '🔒 VERROUILLÉ';
             document.getElementById('status').classList.add('locked');
-            document.getElementById('btn-permission').style.display = 'none';
             
-            var btns = document.querySelectorAll('button');
-            for (var i = 0; i < btns.length; i++) {
-                btns[i].disabled = true;
+            // Désactiver TOUS les boutons
+            var allButtons = document.querySelectorAll('button');
+            for (var i = 0; i < allButtons.length; i++) {
+                allButtons[i].disabled = true;
             }
             
-            log('🔒 VERROUILLAGE ACTIVÉ', 'ok');
+            log('✅ Image ' + letter + ' affichée + VERROUILLÉ');
         }
 
         async function activate() {
-            log('🔑 Permission...', 'warn');
+            log('🔑 Demande permission...');
             
             var granted = false;
-            
-            if (typeof DeviceOrientationEvent !== 'undefined' && 
+                        if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     var response = await DeviceOrientationEvent.requestPermission();
                     granted = (response === 'granted');
+                    log(granted ? '✅ Permission accordée' : '❌ Permission refusée');
                 } catch (e) {
-                    log('❌ ' + e.message, 'err');
+                    log('❌ Erreur: ' + e.message);
                     return;
                 }
             } else {
                 granted = true;
+                log('✅ Android - pas de permission');
             }
             
-            if (!granted) {
-                log('❌ Permission refusée', 'err');
-                return;
-            }
+            if (!granted) return;
             
-            log('✅ Permission accordée', 'ok');
+            // Cacher le bouton activer
             document.getElementById('btn-permission').style.display = 'none';
-            showImg('A');
             
-            // Déverrouiller pour les capteurs après 4s            setTimeout(function() {
-                locked = false;
-                ready = true;
-                document.getElementById('status').textContent = '🎯 BOUGE TON TÉLÉPHONE!';
-                document.getElementById('status').classList.remove('locked');
-                
-                // Réactiver les boutons
-                var btns = document.querySelectorAll('button');
-                for (var i = 0; i < btns.length; i++) {
-                    btns[i].disabled = false;
+            // Afficher image A
+            changeImage('A');
+            
+            // Attendre 4 secondes puis déverrouiller
+            var seconds = 4;
+            document.getElementById('status').textContent = '⏳ ' + seconds + 's...';
+            
+            var countdown = setInterval(function() {
+                seconds--;
+                if (seconds > 0) {
+                    document.getElementById('status').textContent = '⏳ ' + seconds + 's...';
+                } else {
+                    clearInterval(countdown);
+                    
+                    // DÉVERROUILLER
+                    isLocked = false;
+                    sensorsReady = true;
+                    document.getElementById('status').textContent = '🎯 BOUGE TON TÉLÉPHONE!';
+                    document.getElementById('status').classList.remove('locked');
+                    
+                    // Réactiver les boutons
+                    var allButtons = document.querySelectorAll('button');
+                    for (var i = 0; i < allButtons.length; i++) {
+                        allButtons[i].disabled = false;
+                    }
+                    document.getElementById('btn-permission').style.display = 'block';
+                    
+                    log('✅ CAPTEURS ACTIFS - Boutons réactivés');
                 }
-                document.getElementById('btn-permission').style.display = 'block';
-                
-                log('✅ CAPTEURS ACTIFS!', 'ok');
-            }, 4000);
-            
-            log('⏳ Attente 4s...', 'warn');
-            
-            // Écouteur capteurs
+            }, 1000);            
+            // Activer écouteur capteurs
             window.addEventListener('deviceorientation', function(event) {
-                if (!ready || locked) return;
+                if (!sensorsReady || isLocked) return;
                 
                 var gamma = event.gamma || 0;
                 var alpha = event.alpha || 0;
                 
-                // Normaliser alpha
                 if (alpha > 180) alpha = alpha - 360;
                 
-                // Afficher
                 document.getElementById('gamma').textContent = Math.round(gamma) + '°';
                 document.getElementById('alpha').textContent = Math.round(alpha) + '°';
                 
-                // Calcul relatif
                 var gammaRel = gamma - gammaRef;
                 var alphaRel = alpha - alphaRef;
                 
-                // Vérifier seuils
                 var newImg = null;
                 
-                if (gammaRel < -15) {
-                    newImg = 'B';
-                    log('✅ Gamma -15° → B', 'ok');
-                } else if (gammaRel > 15) {
-                    newImg = 'C';
-                    log('✅ Gamma +15° → C', 'ok');
-                } else if (alphaRel > 20) {
-                    newImg = 'D';
-                    log('✅ Alpha +20° → D', 'ok');
-                } else if (alphaRel < -20) {
-                    newImg = 'E';                    log('✅ Alpha -20° → E', 'ok');
-                }
+                if (gammaRel < -15) newImg = 'B';
+                else if (gammaRel > 15) newImg = 'C';
+                else if (alphaRel > 20) newImg = 'D';
+                else if (alphaRel < -20) newImg = 'E';
                 
                 if (newImg) {
-                    showImg(newImg);
+                    log('🎯 Seuil atteint: ' + newImg);
+                    changeImage(newImg);
                 }
             });
             
-            log('✅ Écouteur activé', 'ok');
+            log('✅ Écouteur capteurs activé');
         }
-
-        log('📱 Page chargée', 'warn');
     </script>
 </body>
 </html>
