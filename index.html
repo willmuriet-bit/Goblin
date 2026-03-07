@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation avec Verrouillage</title>
+    <title>Rotation avec Verrouillage Intelligent</title>
     <style>
         body {
             margin: 0;
@@ -98,6 +98,11 @@
             color: #0f0;
             font-weight: bold;        }
 
+        .permanently-locked {
+            color: #f00;
+            font-weight: bold;
+        }
+
         #lock-indicator {
             position: fixed;
             top: 10px;
@@ -118,6 +123,12 @@
             animation: pulse 1s infinite;
         }
 
+        #lock-indicator.permanent {
+            background-color: rgba(255, 0, 0, 0.9);
+            color: white;
+            animation: none;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -134,8 +145,7 @@
 
         .progress-fill {
             height: 100%;
-            background-color: #ff9500;
-            width: 100%;
+            background-color: #ff9500;            width: 100%;
             transition: width 0.1s linear;
         }
     </style>
@@ -145,7 +155,8 @@
     <div id="lock-indicator">
         🔒 VERROUILLÉ<br>
         <small id="countdown">10s</small>
-        <div class="progress-bar">            <div id="progress-fill" class="progress-fill"></div>
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
         </div>
     </div>
 
@@ -166,66 +177,78 @@
         <div class="line">État: <span id="lock-status" class="unlocked">🔓 DÉVERROUILLÉ</span></div>
         <div class="line">Alpha: <span id="alpha">-</span>°</div>
         <div class="line">Image active: <span id="current-img" class="highlight">A</span></div>
-        <div class="line">Mode: <span id="mode">Rotation inactive</span></div>
+        <div class="line">Mode: <span id="mode">En attente...</span></div>
     </div>
 
     <script>
         let sensorsActive = false;
         let isLocked = false;
+        let isPermanentlyLocked = false;
         let lockTimeout = null;
-        const LOCK_DURATION = 10000; // 10 secondes en millisecondes
+        let imageAtUnlock = null;
+        const LOCK_DURATION = 10000; // 10 secondes
 
         // Fonction pour verrouiller les rotations
-        function lockRotations() {
+        function lockRotations(temporary = true) {
             isLocked = true;
+            isPermanentlyLocked = !temporary;
             
-            // Afficher l'indicateur de verrouillage
             const lockIndicator = document.getElementById('lock-indicator');
-            const countdown = document.getElementById('countdown');
-            const progressFill = document.getElementById('progress-fill');
+            const countdown = document.getElementById('countdown');            const progressFill = document.getElementById('progress-fill');
             
             lockIndicator.classList.add('active');
             
-            // Mettre à jour le statut
-            document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
-            document.getElementById('lock-status').className = 'locked';
-            document.getElementById('mode').textContent = 'Attente 10s...';
+            if (isPermanentlyLocked) {
+                lockIndicator.classList.add('permanent');
+                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small>Définitivement</small>';
+                document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ (PERMANENT)';
+                document.getElementById('lock-status').className = 'permanently-locked';
+                document.getElementById('mode').textContent = 'Rotations désactivées';
+            } else {
+                lockIndicator.classList.remove('permanent');
+                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
+                document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
+                document.getElementById('lock-status').className = 'locked';
+                document.getElementById('mode').textContent = 'Attente 10s...';
+                
+                // Compte à rebours
+                let remaining = 10;
+                countdown.textContent = remaining + 's';
+                progressFill.style.width = '100%';
+                
+                const countdownInterval = setInterval(() => {
+                    remaining -= 0.1;
+                    const seconds = Math.ceil(remaining);
+                    countdown.textContent = seconds + 's';
+                    progressFill.style.width = (remaining / 10 * 100) + '%';
+                }, 100);
+                
+                if (lockTimeout) clearTimeout(lockTimeout);
+                lockTimeout = setTimeout(() => {
+                    unlockRotations();
+                    clearInterval(countdownInterval);
+                }, LOCK_DURATION);
+            }
             
             // Désactiver les boutons
             document.querySelectorAll('.test-btn').forEach(btn => {
                 btn.disabled = true;
-            });            
-            // Animation du compte à rebours
-            let remaining = 10;
-            countdown.textContent = remaining + 's';
-            progressFill.style.width = '100%';
-            
-            const countdownInterval = setInterval(() => {
-                remaining -= 0.1;
-                const seconds = Math.ceil(remaining);
-                countdown.textContent = seconds + 's';
-                progressFill.style.width = (remaining / 10 * 100) + '%';
-            }, 100);
-            
-            // Déverrouiller après 10 secondes
-            if (lockTimeout) clearTimeout(lockTimeout);
-            lockTimeout = setTimeout(() => {
-                unlockRotations();
-                clearInterval(countdownInterval);
-            }, LOCK_DURATION);
+            });
         }
 
-        // Fonction pour déverrouiller
+        // Fonction pour déverrouiller (temporairement)
         function unlockRotations() {
             isLocked = false;
+            isPermanentlyLocked = false;
             
-            // Cacher l'indicateur
-            document.getElementById('lock-indicator').classList.remove('active');
+            // Sauvegarder l'image actuelle au moment du déverrouillage
+            imageAtUnlock = document.getElementById('current-img').textContent;
+                        const lockIndicator = document.getElementById('lock-indicator');
+            lockIndicator.classList.remove('active', 'permanent');
             
-            // Mettre à jour le statut
-            document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ';
+            document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ (en attente de rotation)';
             document.getElementById('lock-status').className = 'unlocked';
-            document.getElementById('mode').textContent = 'Rotation ACTIVE';
+            document.getElementById('mode').textContent = 'Rotation ACTIVE - 1er changement = verrouillage';
             
             // Réactiver les boutons
             document.querySelectorAll('.test-btn').forEach(btn => {
@@ -243,12 +266,13 @@
             });
             
             const targetImg = document.getElementById('img-' + letter.toLowerCase());
-            if (targetImg) {                targetImg.classList.add('show');
+            if (targetImg) {
+                targetImg.classList.add('show');
                 document.getElementById('current-img').textContent = letter;
             }
             
-            // VERROUILLER pendant 10 secondes
-            lockRotations();
+            // VERROUILLER temporairement pendant 10 secondes
+            lockRotations(true);
         }
 
         // Activation des capteurs
@@ -269,30 +293,28 @@
                 activateSensors();
             }
         });
-
         function activateSensors() {
             sensorsActive = true;
             document.getElementById('status').textContent = '✅ ACTIF';
             document.getElementById('status').style.color = '#00ff00';
             document.getElementById('btn-permission').style.display = 'none';
-            document.getElementById('mode').textContent = 'Rotation ACTIVE';
+            document.getElementById('mode').textContent = 'Clique sur un bouton pour commencer';
             
             window.addEventListener('deviceorientation', function(event) {
                 const alpha = event.alpha || 0;
-                const beta = event.beta || 0;
-                const gamma = event.gamma || 0;
-
+                
                 // Afficher les valeurs
                 document.getElementById('alpha').textContent = Math.round(alpha);
 
-                // SI VERROUILLÉ, on ne fait rien
+                // SI VERROUILLÉ (temporairement ou définitivement), on ne fait rien
                 if (isLocked) {
                     return;
                 }
 
                 // Normaliser alpha
                 let normalizedAlpha = alpha;
-                if (normalizedAlpha > 180) {                    normalizedAlpha = normalizedAlpha - 360;
+                if (normalizedAlpha > 180) {
+                    normalizedAlpha = normalizedAlpha - 360;
                 }
 
                 // Déterminer la zone
@@ -309,6 +331,9 @@
                 // Changer l'image seulement si différent
                 const currentDisplayed = document.getElementById('current-img').textContent;
                 if (currentDisplayed !== targetImage) {
+                    // CHANGEMENT DÉTECTÉ !
+                    console.log('🔄 Rotation détectée: passage de', currentDisplayed, 'à', targetImage);
+                    
                     document.querySelectorAll('.my-image').forEach(img => {
                         img.classList.remove('show');
                     });
@@ -316,8 +341,9 @@
                     const newImg = document.getElementById('img-' + targetImage.toLowerCase());
                     if (newImg) {
                         newImg.classList.add('show');
-                        document.getElementById('current-img').textContent = targetImage;
-                        console.log('🔄 Rotation: Image', targetImage);
+                        document.getElementById('current-img').textContent = targetImage;                        
+                        // VERROUILLER DÉFINITIVEMENT après le premier changement
+                        lockRotations(false);
                     }
                 }
             });
@@ -325,6 +351,5 @@
 
         console.log('📱 Page chargée - Prêt!');
     </script>
-</body>
 </body>
 </html>
