@@ -217,6 +217,17 @@
             font-size: 14px;
         }
 
+        .thresholds-display {
+            background-color: #2a1a3a;
+            border: 2px solid #aa00ff;
+            color: #dd88ff;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 13px;
+        }
+
         .stability-indicator {
             text-align: center;
             margin: 10px 0;
@@ -233,22 +244,11 @@
             overflow: hidden;
             margin-top: 5px;
         }
-
         .stability-fill {
             height: 100%;
             background-color: #00ff00;
             width: 0%;
             transition: width 0.1s;
-        }
-
-        .beta-hint {
-            background-color: #2a1a4a;
-            border: 2px solid #aa00ff;            color: #dd88ff;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            text-align: center;
-            font-size: 13px;
         }
     </style>
 </head>
@@ -266,12 +266,12 @@
 
     <div class="info-box">
         📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
-        🎯 Seuil: <strong>25°</strong> | Stabilité: <strong>500ms</strong>
+        🎯 1er changement = Verrouillage PERMANENT
     </div>
 
-    <div class="beta-hint">
-        💡 <strong>BETA = 0° est NORMAL !</strong><br>
-        Pour tester Beta : incline ton téléphone écran vers le haut (+) ou vers le bas (-)
+    <div class="thresholds-display">
+        📐 <strong>GAMMA:</strong> +15° (C) | -15° (B)<br>
+        📏 <strong>BETA:</strong> +15° (D) | -8° (E)
     </div>
 
     <div id="image-container">
@@ -295,13 +295,13 @@
     <div class="threshold-indicator">
         <div>ZONES ACTIVES:</div>
         <div class="threshold-bar">
-            <div class="threshold-zone zone-b" id="zone-b">B ← Gauche</div>
+            <div class="threshold-zone zone-b" id="zone-b">B ← -15°</div>
             <div class="threshold-zone zone-a" id="zone-a">A Centre</div>
-            <div class="threshold-zone zone-c" id="zone-c">C → Droite</div>
+            <div class="threshold-zone zone-c" id="zone-c">C → +15°</div>
         </div>
         <div class="threshold-bar" style="margin-top: 10px;">
-            <div class="threshold-zone zone-e" id="zone-e">E ↓ Bas</div>
-            <div class="threshold-zone zone-d" id="zone-d">D ↑ Haut</div>
+            <div class="threshold-zone zone-e" id="zone-e">E ↓ -8°</div>
+            <div class="threshold-zone zone-d" id="zone-d">D ↑ +15°</div>
         </div>
     </div>
 
@@ -309,12 +309,12 @@
         <div class="counter-box">
             <div class="counter-title">📐 GAMMA (Gauche/Droite)</div>
             <div id="gamma-value" class="counter-value gamma-zero">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
+            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuils: ±15°</div>
         </div>
         <div class="counter-box">
             <div class="counter-title">📏 BETA (Haut/Bas)</div>
             <div id="beta-value" class="counter-value beta-zero">0°</div>
-            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
+            <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuils: +15° / -8°</div>
         </div>
     </div>
 
@@ -344,10 +344,14 @@
         let betaRef = 0;        
         let gammaHist = [];
         let betaHist = [];
-        const HIST_SIZE = 5;
+        const HIST_SIZE = 3;
         
-        const THRESHOLD_ENTRY = 25;
-        const STABILITY_TIME = 500;
+        // SEUILS EXACTS COMME DEMANDÉ
+        const GAMMA_THRESHOLD = 15;   // +15° et -15°
+        const BETA_THRESHOLD_POS = 15; // +15°
+        const BETA_THRESHOLD_NEG = -8; // -8°
+        
+        const STABILITY_TIME = 300;
         let stableStartTime = 0;
         let pendingZone = null;
         
@@ -365,37 +369,27 @@
             return angle;
         }
 
-        function getDominantAxis(gamma, beta) {
-            const absGamma = Math.abs(gamma);
-            const absBeta = Math.abs(beta);
-            
-            if (absGamma > absBeta && absGamma > THRESHOLD_ENTRY) {
-                return 'gamma';
-            } else if (absBeta > absGamma && absBeta > THRESHOLD_ENTRY) {
-                return 'beta';
-            }
-            return 'none';
-        }
-
         function updateZones(gamma, beta) {
             document.querySelectorAll('.threshold-zone').forEach(z => z.classList.remove('active'));
             
             let activeZone = 'a';
-            let dominantAxis = getDominantAxis(gamma, beta);
             
-            if (dominantAxis === 'beta') {
-                if (beta > THRESHOLD_ENTRY) activeZone = 'd';
-                else if (beta < -THRESHOLD_ENTRY) activeZone = 'e';
-            } else if (dominantAxis === 'gamma') {
-                if (gamma > THRESHOLD_ENTRY) activeZone = 'c';
-                else if (gamma < -THRESHOLD_ENTRY) activeZone = 'b';
+            // Vérifier les seuils dans cet ordre
+            if (gamma > GAMMA_THRESHOLD) {
+                activeZone = 'c';
+            } else if (gamma < -GAMMA_THRESHOLD) {
+                activeZone = 'b';
+            } else if (beta > BETA_THRESHOLD_POS) {
+                activeZone = 'd';
+            } else if (beta < BETA_THRESHOLD_NEG) {
+                activeZone = 'e';
             }
-                        document.getElementById('zone-' + activeZone).classList.add('active');
+            
+            document.getElementById('zone-' + activeZone).classList.add('active');
             document.getElementById('detected-zone').textContent = activeZone.toUpperCase();
             
             return activeZone.toUpperCase();
         }
-
         function updateStability(zone, isStable) {
             const stabilityFill = document.getElementById('stability-fill');
             const stabilityText = document.getElementById('stability-text');
@@ -405,7 +399,7 @@
                 const percentage = Math.min((elapsed / STABILITY_TIME) * 100, 100);
                 stabilityFill.style.width = percentage + '%';
                 stabilityFill.style.backgroundColor = '#00ff00';
-                stabilityText.textContent = Math.round(elapsed) + 'ms / ' + STABILITY_TIME + 'ms';
+                stabilityText.textContent = Math.round(elapsed) + 'ms';
                 
                 if (elapsed >= STABILITY_TIME) {
                     stabilityText.textContent = '✅ STABLE !';
@@ -439,13 +433,13 @@
                 document.getElementById('lock-status').className = 'locked';
                 document.getElementById('main-status').textContent = '⏳ Attente 4 secondes...';
                 
-                let remaining = 4;                const countdownEl = document.getElementById('countdown');
+                let remaining = 4;
+                const countdownEl = document.getElementById('countdown');
                 const progressFill = document.getElementById('progress-fill');
                 countdownEl.textContent = remaining + 's';
                 progressFill.style.width = '100%';
                 
-                if (countdownInterval) clearInterval(countdownInterval);
-                countdownInterval = setInterval(() => {
+                if (countdownInterval) clearInterval(countdownInterval);                countdownInterval = setInterval(() => {
                     remaining -= 0.1;
                     countdownEl.textContent = Math.ceil(remaining) + 's';
                     progressFill.style.width = (remaining / 4 * 100) + '%';
@@ -489,12 +483,12 @@
                 btn.disabled = false;
             });
         }
+
         function updateGammaDisplay(value) {
             const el = document.getElementById('gamma-value');
             el.textContent = Math.round(value) + '°';
             el.classList.remove('gamma-positive', 'gamma-negative', 'gamma-zero');
-            if (value > 5) el.classList.add('gamma-positive');
-            else if (value < -5) el.classList.add('gamma-negative');
+            if (value > 5) el.classList.add('gamma-positive');            else if (value < -5) el.classList.add('gamma-negative');
             else el.classList.add('gamma-zero');
         }
 
@@ -508,8 +502,8 @@
         }
 
         function changeImage(zone) {
-            console.log('🖼️ Changement vers:', zone);
-            document.getElementById('last-action').textContent = '→ Image ' + zone;
+            console.log('🖼️ CHANGEMENT FINAL vers:', zone);
+            document.getElementById('last-action').textContent = '→ Image ' + zone + ' (VERROUILLÉ)';
             
             document.querySelectorAll('.my-image').forEach(img => {
                 img.classList.remove('show');
@@ -522,6 +516,7 @@
                 updateZones(0, 0);
                 document.getElementById('zone-' + zone.toLowerCase()).classList.add('active');
                 
+                // VERROUILLAGE PERMANENT - PLUS DE CHANGEMENTS APRÈS CECI
                 lockRotations(false);
             }
         }
@@ -537,12 +532,12 @@
             if (targetImg) {
                 targetImg.classList.add('show');
                 document.getElementById('current-img').textContent = letter;
-            }            
+            }
+            
             updateZones(0, 0);
             document.getElementById('zone-' + letter.toLowerCase()).classList.add('active');
             
-            gammaHist = [];
-            betaHist = [];
+            gammaHist = [];            betaHist = [];
             
             lockRotations(true);
         }
@@ -586,9 +581,12 @@
                 window.lastGamma = rawGamma;
                 window.lastBeta = rawBeta;
 
-                if (isLocked) return;
-                const smoothGamma = smooth(rawGamma, gammaHist);
-                const smoothBeta = smooth(rawBeta, betaHist);
+                // SI VERROUILLÉ (surtout permanent), on ignore TOUT
+                if (isLocked) {
+                    return;
+                }
+
+                const smoothGamma = smooth(rawGamma, gammaHist);                const smoothBeta = smooth(rawBeta, betaHist);
 
                 let gammaRel = smoothGamma - gammaRef;
                 let betaRel = smoothBeta - betaRef;
@@ -603,18 +601,20 @@
                 const potentialZone = updateZones(gammaRel, betaRel);
                 const currentImg = document.getElementById('current-img').textContent;
 
+                // Seulement changer si différent de l'image actuelle
                 if (potentialZone !== currentImg) {
                     if (pendingZone !== potentialZone) {
                         pendingZone = potentialZone;
                         stableStartTime = Date.now();
-                        console.log('🎯 Zone:', potentialZone, '| Gamma:', Math.round(gammaRel), '| Beta:', Math.round(betaRel));
+                        console.log('🎯 Zone détectée:', potentialZone, '| Gamma:', Math.round(gammaRel), '| Beta:', Math.round(betaRel));
                     }
                     
                     const elapsed = Date.now() - stableStartTime;
                     updateStability(potentialZone, true);
                     
+                    // Après 300ms de stabilité, on change et on verrouille
                     if (elapsed >= STABILITY_TIME) {
-                        console.log('✅ Changement:', currentImg, '→', potentialZone);
+                        console.log('✅ CHANGEMENT:', currentImg, '→', potentialZone, '(VERROUILLAGE PERMANENT)');
                         changeImage(potentialZone);
                         pendingZone = null;
                     }
@@ -625,7 +625,7 @@
             });
         }
 
-        console.log('📱 Page chargée - Gamma + Beta !');
+        console.log('📱 Page chargée - Version Finale avec seuils personnalisés !');
     </script>
 </body>
 </html>
