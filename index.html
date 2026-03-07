@@ -174,14 +174,15 @@
     <button id="btn-permission">🔓 Activer Capteurs</button>
 
     <div id="image-container">
-        <img id="img-a" class="my-image show" src="https://picsum.photos/300/300?random=1" alt="A">
-        <img id="img-b" class="my-image" src="https://picsum.photos/300/300?random=2" alt="B">
-        <img id="img-c" class="my-image" src="https://picsum.photos/300/300?random=3" alt="C">
+        <!-- IMAGES FIXES - Ne changent jamais -->
+        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="Image A - Fleur">
+        <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="Image B - Montagne">
+        <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="Image C - Océan">
     </div>
 
-    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Afficher Image A</button>
-    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Afficher Image B</button>
-    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Afficher Image C</button>
+    <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Afficher Image A (Fleur)</button>
+    <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Afficher Image B (Montagne)</button>
+    <button class="test-btn" id="btn-c" onclick="manualShow('C')">🔴 Afficher Image C (Océan)</button>
 
     <div id="debug">
         <div class="line">Statut capteurs: <span id="status">En attente</span></div>
@@ -193,15 +194,14 @@
 
     <script>
         let sensorsActive = false;
-        let isLocked = false;
-        let isPermanentlyLocked = false;        let isGracePeriod = false;
+        let isLocked = false;        let isPermanentlyLocked = false;
+        let isGracePeriod = false;
         let lockTimeout = null;
         let countdownInterval = null;
         let graceTimeout = null;
-        const LOCK_DURATION = 10000; // 10 secondes
-        const GRACE_DURATION = 2000; // 2 secondes de délai après déverrouillage
+        const LOCK_DURATION = 10000;
+        const GRACE_DURATION = 2000;
 
-        // Fonction pour verrouiller les rotations
         function lockRotations(temporary = true) {
             isLocked = true;
             isPermanentlyLocked = !temporary;
@@ -213,20 +213,17 @@
             lockIndicator.classList.remove('permanent', 'grace');
             
             if (isPermanentlyLocked) {
-                // Verrouillage PERMANENT
                 lockIndicator.classList.add('permanent');
                 lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small>Définitivement</small>';
                 document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ (PERMANENT)';
                 document.getElementById('lock-status').className = 'permanently-locked';
                 document.getElementById('mode').textContent = 'Rotations désactivées';
             } else {
-                // Verrouillage TEMPORAIRE (10s)
                 lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
                 document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
                 document.getElementById('lock-status').className = 'locked';
                 document.getElementById('mode').textContent = 'Attente 10s...';
                 
-                // Compte à rebours
                 let remaining = 10;
                 const countdownEl = document.getElementById('countdown');
                 const progressFill = document.getElementById('progress-fill');
@@ -243,19 +240,17 @@
                 
                 if (lockTimeout) clearTimeout(lockTimeout);
                 lockTimeout = setTimeout(() => {
-                    startGracePeriod();                    if (countdownInterval) clearInterval(countdownInterval);
+                    startGracePeriod();
+                    if (countdownInterval) clearInterval(countdownInterval);
                 }, LOCK_DURATION);
-            }
-            
-            // Désactiver les boutons
+            }            
             document.querySelectorAll('.test-btn').forEach(btn => {
                 btn.disabled = true;
             });
         }
 
-        // Nouvelle fonction : Période de grâce (2 secondes)
         function startGracePeriod() {
-            isLocked = true; // Toujours verrouillé pendant la grâce
+            isLocked = true;
             isGracePeriod = true;
             
             const lockIndicator = document.getElementById('lock-indicator');
@@ -267,7 +262,6 @@
             document.getElementById('lock-status').className = 'grace-period';
             document.getElementById('mode').textContent = 'Préparation des capteurs...';
             
-            // Compte à rebours de grâce
             let graceRemaining = 2;
             const graceCountdownEl = document.getElementById('grace-countdown');
             graceCountdownEl.textContent = graceRemaining + 's';
@@ -278,7 +272,6 @@
             }, GRACE_DURATION);
         }
 
-        // Fonction pour déverrouiller (temporairement)
         function unlockRotations() {
             isLocked = false;
             isPermanentlyLocked = false;
@@ -291,18 +284,15 @@
             document.getElementById('lock-status').className = 'unlocked';
             document.getElementById('mode').textContent = 'Rotation ACTIVE - 1er changement = verrouillage';
             
-            // Réactiver les boutons
-            document.querySelectorAll('.test-btn').forEach(btn => {                btn.disabled = false;
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.disabled = false;
             });
         }
 
-        // Affichage manuel d'une image
         function manualShow(letter) {
             console.log('👤 Manuel: affichage image', letter);
             
-            // Changer l'image
-            document.querySelectorAll('.my-image').forEach(img => {
-                img.classList.remove('show');
+            document.querySelectorAll('.my-image').forEach(img => {                img.classList.remove('show');
             });
             
             const targetImg = document.getElementById('img-' + letter.toLowerCase());
@@ -311,11 +301,9 @@
                 document.getElementById('current-img').textContent = letter;
             }
             
-            // VERROUILLER temporairement pendant 10 secondes
             lockRotations(true);
         }
 
-        // Activation des capteurs
         document.getElementById('btn-permission').addEventListener('click', async function() {
             if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -341,28 +329,22 @@
             document.getElementById('btn-permission').style.display = 'none';
             document.getElementById('mode').textContent = 'Clique sur un bouton (A, B ou C) pour commencer';
             
-            window.addEventListener('deviceorientation', function(event) {                // SI VERROUILLÉ (temporairement, définitivement, ou période de grâce), on ignore TOUT
+            window.addEventListener('deviceorientation', function(event) {
                 if (isLocked) {
                     return;
                 }
 
-                // Si aucun bouton n'a été cliqué encore, on ne fait rien
                 if (document.getElementById('mode').textContent.includes('Clique sur un bouton')) {
                     return;
                 }
 
                 const alpha = event.alpha || 0;
-                
-                // Afficher les valeurs
                 document.getElementById('alpha').textContent = Math.round(alpha);
 
-                // Normaliser alpha
-                let normalizedAlpha = alpha;
-                if (normalizedAlpha > 180) {
+                let normalizedAlpha = alpha;                if (normalizedAlpha > 180) {
                     normalizedAlpha = normalizedAlpha - 360;
                 }
 
-                // Déterminer la zone
                 let targetImage = 'A';
 
                 if (normalizedAlpha >= -60 && normalizedAlpha < 60) {
@@ -373,10 +355,8 @@
                     targetImage = 'B';
                 }
 
-                // Changer l'image seulement si différent
                 const currentDisplayed = document.getElementById('current-img').textContent;
                 if (currentDisplayed !== targetImage) {
-                    // CHANGEMENT DÉTECTÉ !
                     console.log('🔄 Rotation détectée: passage de', currentDisplayed, 'à', targetImage);
                     
                     document.querySelectorAll('.my-image').forEach(img => {
@@ -387,10 +367,9 @@
                     if (newImg) {
                         newImg.classList.add('show');
                         document.getElementById('current-img').textContent = targetImage;
-                        
-                        // VERROUILLER DÉFINITIVEMENT après le premier changement
                         lockRotations(false);
-                    }                }
+                    }
+                }
             });
         }
 
