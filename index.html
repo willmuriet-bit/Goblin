@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Alpha + Beta - Version Corrigée</title>
+    <title>Rotation Gamma + Beta - Version Finale</title>
     <style>
         body {
             margin: 0;
@@ -85,7 +85,6 @@
 
         .highlight { color: #00ff00; font-weight: bold; }
         .warning { color: #ff0; font-weight: bold; }
-        .danger { color: #f00; font-weight: bold; }
         .locked { color: #ff0; font-weight: bold; }
         .unlocked { color: #0f0; font-weight: bold; }
 
@@ -96,8 +95,8 @@
             background-color: rgba(255, 165, 0, 0.9);
             color: black;
             padding: 15px 20px;
-            border-radius: 10px;            font-weight: bold;
-            font-size: 18px;
+            border-radius: 10px;
+            font-weight: bold;            font-size: 18px;
             display: none;
             z-index: 9999;
         }
@@ -145,14 +144,14 @@
             color: #aaa;
             margin-bottom: 5px;
         }
-        .counter-value {
-            font-size: 26px;
+
+        .counter-value {            font-size: 26px;
             font-weight: bold;
         }
 
-        .alpha-positive { color: #ff6b6b; }
-        .alpha-negative { color: #4ecdc4; }
-        .alpha-zero { color: #00ff00; }
+        .gamma-positive { color: #ff6b6b; }
+        .gamma-negative { color: #4ecdc4; }
+        .gamma-zero { color: #00ff00; }
         
         .beta-positive { color: #ff9ff3; }
         .beta-negative { color: #54a0ff; }
@@ -194,8 +193,8 @@
 
         .status-box {
             background-color: #1a4a1a;
-            border: 2px solid #00ff00;            padding: 10px;
-            border-radius: 10px;
+            border: 2px solid #00ff00;
+            padding: 10px;            border-radius: 10px;
             margin: 10px 0;
             text-align: center;
         }
@@ -204,19 +203,34 @@
             background-color: #4a1a1a;
             border-color: #ff0000;
         }
+
+        .info-box {
+            background-color: #004a4a;
+            border: 2px solid #00ffff;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
     <div id="lock-indicator">
         🔒 VERROUILLÉ<br>
-        <small id="countdown">10s</small>
+        <small id="countdown">4s</small>
         <div class="progress-bar">
             <div id="progress-fill" class="progress-fill"></div>
         </div>
     </div>
 
     <button id="btn-permission">🔓 Activer Capteurs</button>
+
+    <div class="info-box">
+        📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
+        Tient ton téléphone normalement devant toi !
+    </div>
 
     <div id="image-container">
         <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
@@ -229,7 +243,6 @@
     <div class="status-box" id="status-box">
         🎯 État: <span id="main-status">En attente</span>
     </div>
-
     <div class="threshold-indicator">
         <div>ZONES ACTIVES:</div>
         <div class="threshold-bar">
@@ -243,9 +256,10 @@
         </div>
     </div>
 
-    <div class="counters-container">        <div class="counter-box">
-            <div class="counter-title">📐 ALPHA (Gauche/Droite)</div>
-            <div id="alpha-value" class="counter-value alpha-zero">0°</div>
+    <div class="counters-container">
+        <div class="counter-box">
+            <div class="counter-title">📐 GAMMA (Gauche/Droite)</div>
+            <div id="gamma-value" class="counter-value gamma-zero">0°</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±15°</div>
         </div>
         <div class="counter-box">
@@ -264,8 +278,8 @@
     <div id="debug">
         <div class="line">⚡ Statut: <span id="status">En attente</span></div>
         <div class="line">🔐 Verrou: <span id="lock-status" class="unlocked">DÉVERROUILLÉ</span></div>
-        <div class="line">📐 Alpha brut: <span id="alpha-raw">-</span>°</div>
-        <div class="line">📐 Alpha relatif: <span id="alpha-rel" class="highlight">0°</span></div>
+        <div class="line">📐 Gamma brut: <span id="gamma-raw">-</span>°</div>
+        <div class="line">📐 Gamma relatif: <span id="gamma-rel" class="highlight">0°</span></div>
         <div class="line">📏 Beta brut: <span id="beta-raw">-</span>°</div>
         <div class="line">📏 Beta relatif: <span id="beta-rel" class="highlight">0°</span></div>
         <div class="line">🖼️ Image actuelle: <span id="current-img" class="highlight">A</span></div>
@@ -278,36 +292,37 @@
         let isLocked = false;
         let lockTimeout = null;
         let countdownInterval = null;
-        
-        // Références
-        let alphaRef = 0;
+                // Références
+        let gammaRef = 0;
         let betaRef = 0;
         
         // Historique pour filtrage
-        let alphaHist = [];
+        let gammaHist = [];
         let betaHist = [];
-        const HIST_SIZE = 5;
+        const HIST_SIZE = 3;
         
-        const LOCK_DURATION = 10000;
+        // MODIFIÉ: 4 secondes au lieu de 10
+        const LOCK_DURATION = 4000;
         const THRESHOLD = 15;
 
         // Filtrage des valeurs
-        function smooth(value, hist) {            hist.push(value);
+        function smooth(value, hist) {
+            hist.push(value);
             if (hist.length > HIST_SIZE) hist.shift();
             return hist.reduce((a, b) => a + b, 0) / hist.length;
         }
 
-        function updateZones(alpha, beta) {
-            // Reset toutes les zones
+        function updateZones(gamma, beta) {
             document.querySelectorAll('.threshold-zone').forEach(z => z.classList.remove('active'));
             
-            // Activer la zone courante
             let activeZone = 'a';
             
+            // BETA prioritaire (haut/bas)
             if (beta > THRESHOLD) activeZone = 'd';
             else if (beta < -THRESHOLD) activeZone = 'e';
-            else if (alpha > THRESHOLD) activeZone = 'c';
-            else if (alpha < -THRESHOLD) activeZone = 'b';
+            // GAMMA secondaire (gauche/droite)
+            else if (gamma > THRESHOLD) activeZone = 'c';
+            else if (gamma < -THRESHOLD) activeZone = 'b';
             
             document.getElementById('zone-' + activeZone).classList.add('active');
             document.getElementById('detected-zone').textContent = activeZone.toUpperCase();
@@ -326,24 +341,24 @@
                 lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small>Définitivement</small>';
                 document.getElementById('lock-status').textContent = 'VERROUILLÉ (PERMANENT)';
                 document.getElementById('lock-status').className = 'locked';
-                document.getElementById('main-status').textContent = '🔒 Image verrouillée';
-                document.getElementById('status-box').classList.add('locked');
+                document.getElementById('main-status').textContent = '🔒 Image verrouillée';                document.getElementById('status-box').classList.add('locked');
             } else {
-                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
-                document.getElementById('lock-status').textContent = 'VERROUILLÉ (10s)';
+                lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">4s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
+                document.getElementById('lock-status').textContent = 'VERROUILLÉ (4s)';
                 document.getElementById('lock-status').className = 'locked';
-                document.getElementById('main-status').textContent = '⏳ Attente 10 secondes...';
+                document.getElementById('main-status').textContent = '⏳ Attente 4 secondes...';
                 
-                let remaining = 10;
+                let remaining = 4;
                 const countdownEl = document.getElementById('countdown');
                 const progressFill = document.getElementById('progress-fill');
                 countdownEl.textContent = remaining + 's';
                 progressFill.style.width = '100%';
                 
                 if (countdownInterval) clearInterval(countdownInterval);
-                countdownInterval = setInterval(() => {                    remaining -= 0.1;
+                countdownInterval = setInterval(() => {
+                    remaining -= 0.1;
                     countdownEl.textContent = Math.ceil(remaining) + 's';
-                    progressFill.style.width = (remaining / 10 * 100) + '%';
+                    progressFill.style.width = (remaining / 4 * 100) + '%';
                 }, 100);
                 
                 if (lockTimeout) clearTimeout(lockTimeout);
@@ -361,11 +376,11 @@
         function unlockRotations() {
             isLocked = false;
             
-            // IMPORTANT: Capturer les références DES DEUX axes
-            alphaRef = window.lastAlpha || 0;
+            // Capturer les références GAMMA + BETA
+            gammaRef = window.lastGamma || 0;
             betaRef = window.lastBeta || 0;
             
-            console.log('✅ Déverrouillé - AlphaRef:', alphaRef, 'BetaRef:', betaRef);
+            console.log('✅ Déverrouillé - GammaRef:', gammaRef, 'BetaRef:', betaRef);
             
             const lockIndicator = document.getElementById('lock-indicator');
             lockIndicator.classList.remove('active', 'permanent');
@@ -375,9 +390,7 @@
             document.getElementById('main-status').textContent = '🎯 Bouge ton téléphone !';
             document.getElementById('status-box').classList.remove('locked');
             
-            // Reset affichage
-            updateAlphaDisplay(0);
-            updateBetaDisplay(0);
+            updateGammaDisplay(0);            updateBetaDisplay(0);
             updateZones(0, 0);
             
             document.querySelectorAll('.test-btn').forEach(btn => {
@@ -385,12 +398,13 @@
             });
         }
 
-        function updateAlphaDisplay(value) {
-            const el = document.getElementById('alpha-value');
+        function updateGammaDisplay(value) {
+            const el = document.getElementById('gamma-value');
             el.textContent = Math.round(value) + '°';
-            el.classList.remove('alpha-positive', 'alpha-negative', 'alpha-zero');
-            if (value > 5) el.classList.add('alpha-positive');
-            else if (value < -5) el.classList.add('alpha-negative');            else el.classList.add('alpha-zero');
+            el.classList.remove('gamma-positive', 'gamma-negative', 'gamma-zero');
+            if (value > 5) el.classList.add('gamma-positive');
+            else if (value < -5) el.classList.add('gamma-negative');
+            else el.classList.add('gamma-zero');
         }
 
         function updateBetaDisplay(value) {
@@ -419,14 +433,13 @@
             updateZones(0, 0);
             document.getElementById('zone-' + letter.toLowerCase()).classList.add('active');
             
-            alphaHist = [];
+            gammaHist = [];
             betaHist = [];
             
             lockRotations(true);
         }
 
-        document.getElementById('btn-permission').addEventListener('click', async function() {
-            if (typeof DeviceOrientationEvent !== 'undefined' && 
+        document.getElementById('btn-permission').addEventListener('click', async function() {            if (typeof DeviceOrientationEvent !== 'undefined' && 
                 typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const response = await DeviceOrientationEvent.requestPermission();
@@ -439,7 +452,8 @@
                     alert('Erreur: ' + e.message);
                 }
             } else {
-                activateSensors();            }
+                activateSensors();
+            }
         });
 
         function activateSensors() {
@@ -449,10 +463,11 @@
             document.getElementById('main-status').textContent = '👆 Clique sur une image pour commencer';
             
             window.addEventListener('deviceorientation', function(event) {
-                window.lastAlpha = event.alpha || 0;
+                // MODIFIÉ: Gamma au lieu de Alpha
+                window.lastGamma = event.gamma || 0;
                 window.lastBeta = event.beta || 0;
                 
-                document.getElementById('alpha-raw').textContent = Math.round(window.lastAlpha);
+                document.getElementById('gamma-raw').textContent = Math.round(window.lastGamma);
                 document.getElementById('beta-raw').textContent = Math.round(window.lastBeta);
 
                 if (isLocked) {
@@ -464,31 +479,27 @@
                 }
 
                 // Lisser
-                const smoothAlpha = smooth(window.lastAlpha, alphaHist);
+                const smoothGamma = smooth(window.lastGamma, gammaHist);
                 const smoothBeta = smooth(window.lastBeta, betaHist);
 
                 // Calcul relatif
-                let alphaRel = smoothAlpha - alphaRef;
+                let gammaRel = smoothGamma - gammaRef;
                 let betaRel = smoothBeta - betaRef;
-                
-                // Normaliser alpha
-                if (alphaRel > 180) alphaRel -= 360;
-                if (alphaRel < -180) alphaRel += 360;
 
                 // Afficher
-                document.getElementById('alpha-rel').textContent = Math.round(alphaRel) + '°';
-                document.getElementById('beta-rel').textContent = Math.round(betaRel) + '°';
-                updateAlphaDisplay(alphaRel);
+                document.getElementById('gamma-rel').textContent = Math.round(gammaRel) + '°';
+                document.getElementById('beta-rel').textContent = Math.round(betaRel) + '°';                updateGammaDisplay(gammaRel);
                 updateBetaDisplay(betaRel);
 
                 // Déterminer zone
-                const zone = updateZones(alphaRel, betaRel);
+                const zone = updateZones(gammaRel, betaRel);
 
                 // Changer image
                 const currentImg = document.getElementById('current-img').textContent;
                 if (currentImg !== zone) {
                     console.log('🔄 CHANGEMENT:', currentImg, '→', zone, 
-                        '| Alpha:', Math.round(alphaRel),                         '| Beta:', Math.round(betaRel));
+                        '| Gamma:', Math.round(gammaRel), 
+                        '| Beta:', Math.round(betaRel));
                     
                     document.getElementById('last-action').textContent = 'Rotation → ' + zone;
                     
@@ -508,7 +519,7 @@
             });
         }
 
-        console.log('📱 Page chargée - Alpha + Beta actifs !');
+        console.log('📱 Page chargée - Gamma + Beta actifs !');
     </script>
 </body>
 </html>
