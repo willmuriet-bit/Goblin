@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rotation Gamma + Beta - Version Anti-Saut</title>
+    <title>Rotation Gamma + Beta - Version Beta Corrigée</title>
     <style>
         body {
             margin: 0;
@@ -250,28 +250,6 @@
             border-radius: 10px;
             font-weight: bold;
         }
-
-        .jump-alert {
-            background-color: #4a1a1a;
-            border: 2px solid #ff0000;
-            color: #ff6b6b;
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-
-        .jump-alert.visible {
-            display: block;
-            animation: flash 0.5s;
-        }
-
-        @keyframes flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
     </style>
 </head>
 <body>
@@ -288,11 +266,11 @@
 
     <div class="info-box">
         📱 <strong>GAMMA</strong> (Gauche/Droite) + <strong>BETA</strong> (Haut/Bas)<br>
-        🎯 Seuil: <strong>25°</strong> | Anti-saut: <strong>ACTIF</strong><br>
-        Tient ton téléphone normalement devant toi !
+        🎯 Seuil: <strong>25°</strong> | Stabilité: <strong>500ms</strong>
     </div>
 
-    <div id="image-container">        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
+    <div id="image-container">
+        <img id="img-a" class="my-image show" src="https://picsum.photos/seed/fleur123/300/300" alt="A">
         <img id="img-b" class="my-image" src="https://picsum.photos/seed/montagne456/300/300" alt="B">
         <img id="img-c" class="my-image" src="https://picsum.photos/seed/ocean789/300/300" alt="C">
         <img id="img-d" class="my-image" src="https://picsum.photos/seed/soleil111/300/300" alt="D">
@@ -301,10 +279,6 @@
 
     <div class="status-box" id="status-box">
         🎯 État: <span id="main-status">Clique sur "Activer Capteurs"</span>
-    </div>
-
-    <div class="jump-alert" id="jump-alert">
-        ⚠️ SAUT DÉTECTÉ ET CORRIGÉ !
     </div>
 
     <div class="dominant-axis" id="dominant-axis">
@@ -318,8 +292,7 @@
         </div>
     </div>
 
-    <div class="threshold-indicator">
-        <div>ZONES ACTIVES:</div>
+    <div class="threshold-indicator">        <div>ZONES ACTIVES:</div>
         <div class="threshold-bar">
             <div class="threshold-zone zone-b" id="zone-b">B ← Gauche</div>
             <div class="threshold-zone zone-a" id="zone-a">A Centre</div>
@@ -341,7 +314,8 @@
             <div class="counter-title">📏 BETA (Haut/Bas)</div>
             <div id="beta-value" class="counter-value beta-zero">0°</div>
             <div style="font-size: 11px; color: #888; margin-top: 5px;">Seuil: ±25°</div>
-        </div>    </div>
+        </div>
+    </div>
 
     <button class="test-btn" id="btn-a" onclick="manualShow('A')">🔵 Image A</button>
     <button class="test-btn" id="btn-b" onclick="manualShow('B')">🟢 Image B</button>
@@ -356,7 +330,6 @@
         <div class="line">📐 Gamma relatif: <span id="gamma-rel" class="highlight">0°</span></div>
         <div class="line">📏 Beta brut: <span id="beta-raw">-</span>°</div>
         <div class="line">📏 Beta relatif: <span id="beta-rel" class="highlight">0°</span></div>
-        <div class="line">📏 Beta corrigé: <span id="beta-corrected" class="warning">-</span>°</div>
         <div class="line">🖼️ Image actuelle: <span id="current-img" class="highlight">A</span></div>
         <div class="line">🎯 Zone détectée: <span id="detected-zone" class="warning">-</span></div>
         <div class="line">📝 Dernière action: <span id="last-action">-</span></div>
@@ -368,8 +341,7 @@
         let isLocked = false;
         let isPermanentlyLocked = false;
         let lockTimeout = null;
-        let countdownInterval = null;
-        
+        let countdownInterval = null;        
         // Références
         let gammaRef = 0;
         let betaRef = 0;
@@ -377,20 +349,13 @@
         // Historique pour filtrage
         let gammaHist = [];
         let betaHist = [];
-        const HIST_SIZE = 5;
+        const HIST_SIZE = 3;
         
-        // NOUVEAU: Dernière valeur valide pour détecter les sauts
-        let lastValidGamma = 0;
-        let lastValidBeta = 0;
-        
-        // Seuil pour détecter un saut anormal (si changement > 100° d'un coup = saut)
-        const JUMP_THRESHOLD = 100;
-        
+        // Seuils
         const THRESHOLD_ENTRY = 25;
-        const THRESHOLD_EXIT = 10;
         const STABILITY_TIME = 500;
-        let stabilityTimer = null;
-        let stableStartTime = 0;        let pendingZone = null;
+        let stableStartTime = 0;
+        let pendingZone = null;
         
         const LOCK_DURATION = 4000;
 
@@ -401,51 +366,17 @@
             return hist.reduce((a, b) => a + b, 0) / hist.length;
         }
 
-        // NOUVELLE FONCTION: Corriger les sauts de Beta
-        function correctJump(currentValue, lastValue, axis) {
-            const diff = Math.abs(currentValue - lastValue);
-            
-            // Si le changement est trop brusque (> 100°), c'est un saut
-            if (diff > JUMP_THRESHOLD) {
-                console.warn(`⚠️ SAUT DÉTECTÉ sur ${axis}: ${lastValue}° → ${currentValue}° (diff: ${diff}°)`);
-                
-                // Afficher l'alerte
-                const alertEl = document.getElementById('jump-alert');
-                alertEl.classList.add('visible');
-                setTimeout(() => alertEl.classList.remove('visible'), 1000);
-                
-                // Corriger la valeur en la ramenant proche de la dernière valeur valide
-                // On garde le signe mais on limite le changement
-                let correctedValue = lastValue;
-                
-                // Si la nouvelle valeur est > 270°, c'est probablement un wrap de -90°
-                if (currentValue > 270) {
-                    correctedValue = currentValue - 360;
-                    console.log(`✅ Correction: ${currentValue}° → ${correctedValue}°`);
-                }
-                // Si la nouvelle valeur est < -270°, c'est probablement un wrap de +90°
-                else if (currentValue < -270) {
-                    correctedValue = currentValue + 360;
-                    console.log(`✅ Correction: ${currentValue}° → ${correctedValue}°`);
-                }
-                // Sinon, on garde simplement la dernière valeur valide
-                else {
-                    correctedValue = lastValue;
-                }
-                
-                document.getElementById('beta-corrected').textContent = Math.round(correctedValue);
-                
-                return correctedValue;
-            }
-            
-            // Pas de saut, valeur normale
-            document.getElementById('beta-corrected').textContent = Math.round(currentValue);            return currentValue;
+        // Normaliser Gamma entre -90 et 90
+        function normalizeGamma(angle) {
+            if (angle > 90) angle = 90;
+            if (angle < -90) angle = -90;
+            return angle;
         }
 
-        // Normaliser une valeur entre -180 et 180
-        function normalizeAngle(angle) {
-            while (angle > 180) angle -= 360;
-            while (angle < -180) angle += 360;
+        // Normaliser Beta entre -180 et 180 (PLUS DE CORRECTION AGRESSIVE)
+        function normalizeBeta(angle) {
+            // Beta peut aller de -180 à 180
+            // On garde la valeur telle quelle, pas de correction automatique
             return angle;
         }
 
@@ -460,7 +391,6 @@
             }
             return 'none';
         }
-
         function updateZones(gamma, beta) {
             document.querySelectorAll('.threshold-zone').forEach(z => z.classList.remove('active'));
             
@@ -488,7 +418,8 @@
             return activeZone.toUpperCase();
         }
 
-        function updateStability(zone, isStable) {            const stabilityFill = document.getElementById('stability-fill');
+        function updateStability(zone, isStable) {
+            const stabilityFill = document.getElementById('stability-fill');
             const stabilityText = document.getElementById('stability-text');
             
             if (isStable) {
@@ -500,7 +431,6 @@
                 
                 if (elapsed >= STABILITY_TIME) {
                     stabilityText.textContent = '✅ STABLE - Changement prêt!';
-                    stabilityFill.style.backgroundColor = '#00ff00';
                 }
             } else {
                 stabilityFill.style.width = '0%';
@@ -509,8 +439,7 @@
             }
         }
 
-        function lockRotations(temporary = true) {
-            isLocked = true;
+        function lockRotations(temporary = true) {            isLocked = true;
             isPermanentlyLocked = !temporary;
             
             const lockIndicator = document.getElementById('lock-indicator');
@@ -537,7 +466,8 @@
                 countdownEl.textContent = remaining + 's';
                 progressFill.style.width = '100%';
                 
-                if (countdownInterval) clearInterval(countdownInterval);                countdownInterval = setInterval(() => {
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = setInterval(() => {
                     remaining -= 0.1;
                     countdownEl.textContent = Math.ceil(remaining) + 's';
                     progressFill.style.width = (remaining / 4 * 100) + '%';
@@ -558,8 +488,7 @@
         function unlockRotations() {
             isLocked = false;
             isPermanentlyLocked = false;
-            
-            gammaRef = window.lastGamma || 0;
+                        gammaRef = window.lastGamma || 0;
             betaRef = window.lastBeta || 0;
             
             console.log('✅ Déverrouillé - GammaRef:', gammaRef, 'BetaRef:', betaRef);
@@ -586,7 +515,8 @@
             const el = document.getElementById('gamma-value');
             el.textContent = Math.round(value) + '°';
             el.classList.remove('gamma-positive', 'gamma-negative', 'gamma-zero');
-            if (value > 5) el.classList.add('gamma-positive');            else if (value < -5) el.classList.add('gamma-negative');
+            if (value > 5) el.classList.add('gamma-positive');
+            else if (value < -5) el.classList.add('gamma-negative');
             else el.classList.add('gamma-zero');
         }
 
@@ -607,8 +537,7 @@
                 img.classList.remove('show');
             });
             
-            const newImg = document.getElementById('img-' + zone.toLowerCase());
-            if (newImg) {
+            const newImg = document.getElementById('img-' + zone.toLowerCase());            if (newImg) {
                 newImg.classList.add('show');
                 document.getElementById('current-img').textContent = zone;
                 updateZones(0, 0);
@@ -635,7 +564,8 @@
             updateZones(0, 0);
             document.getElementById('zone-' + letter.toLowerCase()).classList.add('active');
             
-            gammaHist = [];            betaHist = [];
+            gammaHist = [];
+            betaHist = [];
             
             lockRotations(true);
         }
@@ -656,8 +586,7 @@
                 } catch (e) {
                     alert('Erreur: ' + e.message);
                 }
-            } else {
-                activateSensors();
+            } else {                activateSensors();
                 setTimeout(() => {
                     manualShow('A');
                 }, 500);
@@ -672,55 +601,56 @@
             document.getElementById('btn-permission').style.display = 'none';
             
             window.addEventListener('deviceorientation', function(event) {
-                let rawGamma = event.gamma || 0;
-                let rawBeta = event.beta || 0;
+                // Récupérer les valeurs brutes
+                let rawGamma = event.gamma;
+                let rawBeta = event.beta;
                 
-                // Normaliser Gamma
-                rawGamma = normalizeAngle(rawGamma);
+                // Gérer les valeurs nulles
+                if (rawGamma === null) rawGamma = 0;
+                if (rawBeta === null) rawBeta = 0;
                 
-                // CORRECTION ANTI-SAUT pour Beta
-                rawBeta = correctJump(rawBeta, lastValidBeta, 'Beta');
+                // Normaliser (SANS correction aggressive)
+                rawGamma = normalizeGamma(rawGamma);
+                rawBeta = normalizeBeta(rawBeta);
                 
-                // Stocker les valeurs brutes (pour affichage)
+                // Stocker
                 window.lastGamma = rawGamma;
                 window.lastBeta = rawBeta;
-                                // Mettre à jour les dernières valeurs valides
-                lastValidGamma = rawGamma;
-                lastValidBeta = rawBeta;
                 
-                document.getElementById('gamma-raw').textContent = Math.round(window.lastGamma);
+                // Afficher valeurs brutes
+                document.getElementById('gamma-raw').textContent = Math.round(rawGamma);
                 document.getElementById('beta-raw').textContent = Math.round(rawBeta);
 
                 if (isLocked) {
                     return;
                 }
 
-                // Lisser
-                const smoothGamma = smooth(window.lastGamma, gammaHist);
-                const smoothBeta = smooth(window.lastBeta, betaHist);
+                // Lisser les valeurs
+                const smoothGamma = smooth(rawGamma, gammaHist);
+                const smoothBeta = smooth(rawBeta, betaHist);
 
-                // Calcul relatif
+                // Calcul relatif par rapport à la référence
                 let gammaRel = smoothGamma - gammaRef;
                 let betaRel = smoothBeta - betaRef;
                 
-                // Normaliser les valeurs relatives
-                gammaRel = normalizeAngle(gammaRel);
-                betaRel = normalizeAngle(betaRel);
-
-                // Afficher
+                // Limiter Gamma entre -90 et 90
+                gammaRel = normalizeGamma(gammaRel);
+                // Afficher valeurs relatives
                 document.getElementById('gamma-rel').textContent = Math.round(gammaRel) + '°';
                 document.getElementById('beta-rel').textContent = Math.round(betaRel) + '°';
                 updateGammaDisplay(gammaRel);
                 updateBetaDisplay(betaRel);
 
+                // Déterminer zone
                 const potentialZone = updateZones(gammaRel, betaRel);
                 const currentImg = document.getElementById('current-img').textContent;
 
+                // Vérifier changement
                 if (potentialZone !== currentImg) {
                     if (pendingZone !== potentialZone) {
                         pendingZone = potentialZone;
                         stableStartTime = Date.now();
-                        console.log('🎯 Nouvelle zone potentielle:', potentialZone);
+                        console.log('🎯 Zone potentielle:', potentialZone, '| Gamma:', Math.round(gammaRel), '| Beta:', Math.round(betaRel));
                     }
                     
                     const elapsed = Date.now() - stableStartTime;
@@ -728,17 +658,18 @@
                     updateStability(potentialZone, true);
                     
                     if (elapsed >= STABILITY_TIME) {
-                        console.log('✅ Zone stable - Changement:', currentImg, '→', potentialZone);
+                        console.log('✅ Changement:', currentImg, '→', potentialZone);
                         changeImage(potentialZone);
                         pendingZone = null;
                     }
                 } else {
-                    pendingZone = null;                    updateStability(currentImg, false);
+                    pendingZone = null;
+                    updateStability(currentImg, false);
                 }
             });
         }
 
-        console.log('📱 Page chargée - Anti-saut Beta activé!');
+        console.log('📱 Page chargée - Beta corrigé!');
     </script>
 </body>
 </html>
