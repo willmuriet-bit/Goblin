@@ -103,6 +103,11 @@
             font-weight: bold;
         }
 
+        .grace-period {
+            color: #0ff;
+            font-weight: bold;
+        }
+
         #lock-indicator {
             position: fixed;
             top: 10px;
@@ -129,13 +134,18 @@
             animation: none;
         }
 
+        #lock-indicator.grace {
+            background-color: rgba(0, 255, 255, 0.9);
+            color: black;
+            animation: none;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
 
-        .progress-bar {
-            width: 100%;
+        .progress-bar {            width: 100%;
             height: 5px;
             background-color: #333;
             margin-top: 10px;
@@ -145,7 +155,8 @@
 
         .progress-fill {
             height: 100%;
-            background-color: #ff9500;            width: 100%;
+            background-color: #ff9500;
+            width: 100%;
             transition: width 0.1s linear;
         }
     </style>
@@ -183,18 +194,23 @@
     <script>
         let sensorsActive = false;
         let isLocked = false;
-        let isPermanentlyLocked = false;
+        let isPermanentlyLocked = false;        let isGracePeriod = false;
         let lockTimeout = null;
         let countdownInterval = null;
+        let graceTimeout = null;
         const LOCK_DURATION = 10000; // 10 secondes
+        const GRACE_DURATION = 2000; // 2 secondes de délai après déverrouillage
 
         // Fonction pour verrouiller les rotations
         function lockRotations(temporary = true) {
             isLocked = true;
             isPermanentlyLocked = !temporary;
+            isGracePeriod = false;
             
             const lockIndicator = document.getElementById('lock-indicator');
-                        lockIndicator.classList.add('active');
+            
+            lockIndicator.classList.add('active');
+            lockIndicator.classList.remove('permanent', 'grace');
             
             if (isPermanentlyLocked) {
                 // Verrouillage PERMANENT
@@ -205,7 +221,6 @@
                 document.getElementById('mode').textContent = 'Rotations désactivées';
             } else {
                 // Verrouillage TEMPORAIRE (10s)
-                lockIndicator.classList.remove('permanent');
                 lockIndicator.innerHTML = '🔒 VERROUILLÉ<br><small id="countdown">10s</small><div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>';
                 document.getElementById('lock-status').textContent = '🔒 VERROUILLÉ';
                 document.getElementById('lock-status').className = 'locked';
@@ -228,8 +243,7 @@
                 
                 if (lockTimeout) clearTimeout(lockTimeout);
                 lockTimeout = setTimeout(() => {
-                    unlockRotations();
-                    if (countdownInterval) clearInterval(countdownInterval);
+                    startGracePeriod();                    if (countdownInterval) clearInterval(countdownInterval);
                 }, LOCK_DURATION);
             }
             
@@ -239,20 +253,46 @@
             });
         }
 
+        // Nouvelle fonction : Période de grâce (2 secondes)
+        function startGracePeriod() {
+            isLocked = true; // Toujours verrouillé pendant la grâce
+            isGracePeriod = true;
+            
+            const lockIndicator = document.getElementById('lock-indicator');
+            lockIndicator.classList.remove('permanent');
+            lockIndicator.classList.add('grace');
+            lockIndicator.innerHTML = '⏳ PRÉPARATION...<br><small id="grace-countdown">2s</small>';
+            
+            document.getElementById('lock-status').textContent = '⏳ PÉRIODE DE GRÂCE';
+            document.getElementById('lock-status').className = 'grace-period';
+            document.getElementById('mode').textContent = 'Préparation des capteurs...';
+            
+            // Compte à rebours de grâce
+            let graceRemaining = 2;
+            const graceCountdownEl = document.getElementById('grace-countdown');
+            graceCountdownEl.textContent = graceRemaining + 's';
+            
+            if (graceTimeout) clearTimeout(graceTimeout);
+            graceTimeout = setTimeout(() => {
+                unlockRotations();
+            }, GRACE_DURATION);
+        }
+
         // Fonction pour déverrouiller (temporairement)
         function unlockRotations() {
             isLocked = false;
             isPermanentlyLocked = false;
-                        const lockIndicator = document.getElementById('lock-indicator');
-            lockIndicator.classList.remove('active', 'permanent');
+            isGracePeriod = false;
+            
+            const lockIndicator = document.getElementById('lock-indicator');
+            lockIndicator.classList.remove('active', 'permanent', 'grace');
             
             document.getElementById('lock-status').textContent = '🔓 DÉVERROUILLÉ (tourne ton téléphone!)';
             document.getElementById('lock-status').className = 'unlocked';
             document.getElementById('mode').textContent = 'Rotation ACTIVE - 1er changement = verrouillage';
             
             // Réactiver les boutons
-            document.querySelectorAll('.test-btn').forEach(btn => {
-                btn.disabled = false;
+            document.querySelectorAll('.test-btn').forEach(btn => {                btn.disabled = false;
             });
         }
 
@@ -293,6 +333,7 @@
                 activateSensors();
             }
         });
+
         function activateSensors() {
             sensorsActive = true;
             document.getElementById('status').textContent = '✅ ACTIF';
@@ -300,16 +341,12 @@
             document.getElementById('btn-permission').style.display = 'none';
             document.getElementById('mode').textContent = 'Clique sur un bouton (A, B ou C) pour commencer';
             
-            // IMPORTANT: On ajoute l'écouteur MAIS on ne traite pas les événements tant que isLocked = true
-            // Par défaut isLocked = false, mais on ne change l'image que si différent de l'actuelle
-            window.addEventListener('deviceorientation', function(event) {
-                // SI VERROUILLÉ (temporairement ou définitivement), on ignore TOUT
+            window.addEventListener('deviceorientation', function(event) {                // SI VERROUILLÉ (temporairement, définitivement, ou période de grâce), on ignore TOUT
                 if (isLocked) {
                     return;
                 }
-                
-                // Si les capteurs viennent juste d'être activés mais qu'aucun bouton n'a été cliqué,
-                // on ne fait rien (on attend que l'utilisateur clique sur un bouton)
+
+                // Si aucun bouton n'a été cliqué encore, on ne fait rien
                 if (document.getElementById('mode').textContent.includes('Clique sur un bouton')) {
                     return;
                 }
@@ -341,7 +378,8 @@
                 if (currentDisplayed !== targetImage) {
                     // CHANGEMENT DÉTECTÉ !
                     console.log('🔄 Rotation détectée: passage de', currentDisplayed, 'à', targetImage);
-                                        document.querySelectorAll('.my-image').forEach(img => {
+                    
+                    document.querySelectorAll('.my-image').forEach(img => {
                         img.classList.remove('show');
                     });
                     
@@ -352,8 +390,7 @@
                         
                         // VERROUILLER DÉFINITIVEMENT après le premier changement
                         lockRotations(false);
-                    }
-                }
+                    }                }
             });
         }
 
