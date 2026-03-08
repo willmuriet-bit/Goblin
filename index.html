@@ -321,14 +321,12 @@
 </head>
 <body>
 
-    <!-- VUE 1: ACCUEIL -->
     <div id="view-home" class="view active">
         <h1>PAD INTERACTIF</h1>
         <button onclick="app.navigate('view-list-selector-perf')">PERFORMER</button>
         <button onclick="app.navigate('view-list-manager')">LISTE DES DESSINS</button>
     </div>
 
-    <!-- VUE 2: GESTION DES LISTES -->
     <div id="view-list-manager" class="view">
         <h2>Mes Listes</h2>
         <div class="list-grid" id="manager-list-container"></div>
@@ -336,25 +334,22 @@
         <button class="small" onclick="app.navigate('view-home')">Retour</button>
     </div>
 
-    <!-- VUE 3: DÉTAIL D'UNE LISTE -->
     <div id="view-list-detail" class="view">
         <div class="list-title-container">
             <button class="back-btn" onclick="app.navigate('view-list-manager')">⬅️</button>
             <h2 id="detail-list-title">Liste X</h2>
-            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>        </div>
+            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>
+        </div>
         <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
-        <div class="zone-editor-grid" id="detail-zone-container"></div>
-        <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
+        <div class="zone-editor-grid" id="detail-zone-container"></div>        <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
     </div>
 
-    <!-- VUE 4: SÉLECTION DE LISTE -->
     <div id="view-list-selector-perf" class="view">
         <h2>Choisir une liste pour Performer</h2>
         <div class="list-grid" id="perf-list-container"></div>
         <button class="small" onclick="app.navigate('view-home')">Annuler</button>
     </div>
 
-    <!-- VUE 5: ÉDITEUR DE DESSIN (Zones) -->
     <div id="view-draw-editor" class="view">
         <canvas id="editor-canvas"></canvas>
         <div class="editor-toolbar">
@@ -377,7 +372,6 @@
         </div>
     </div>
 
-    <!-- VUE 6: PERFORMANCE -->
     <div id="view-performance" class="view">
         <canvas id="perf-canvas"></canvas>
         <div class="zone-overlay" id="perf-zone-overlay"></div>
@@ -390,13 +384,13 @@
             <div class="color-popup" id="color-popup">
                 <div class="color-option selected" style="background:black" onclick="app.selectColor('black', this)"></div>
                 <div class="color-option" style="background:red" onclick="app.selectColor('red', this)"></div>
-                <div class="color-option" style="background:blue" onclick="app.selectColor('blue', this)"></div>                <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
+                <div class="color-option" style="background:blue" onclick="app.selectColor('blue', this)"></div>
+                <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
                 <div class="color-option" style="background:orange" onclick="app.selectColor('orange', this)"></div>
                 <div class="color-option" style="background:purple" onclick="app.selectColor('purple', this)"></div>
                 <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>
                 <div class="color-option" style="background:brown" onclick="app.selectColor('brown', this)"></div>
-            </div>
-        </div>
+            </div>        </div>
     </div>
 
     <script>
@@ -439,15 +433,13 @@
                 this.resizeCanvas(this.elements.editorCanvas);
                 this.elements.perfCtx = this.elements.perfCanvas.getContext('2d');
                 this.elements.editorCtx = this.elements.editorCanvas.getContext('2d');
+
                 this.initZoneOverlay();
                 this.renderListManager();
-                
-                console.log("✅ Application initialisée - BOUTONS PRÊTS");
             },
 
             saveData: function() {
-                localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));
-            },
+                localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));            },
 
             navigate: function(viewId) {
                 document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -460,8 +452,6 @@
                 if (viewId === 'view-list-selector-perf') this.renderPerfSelector();
                 if (viewId === 'view-performance') this.setupPerformanceMode();
                 if (viewId === 'view-draw-editor') this.setupEditorMode();
-                
-                console.log("📍 Navigation vers:", viewId);
             },
 
             renderListManager: function() {
@@ -488,7 +478,8 @@
 
             renderListDetail: function() {
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
-                document.getElementById('detail-list-title').innerText = list.name;                const container = document.getElementById('detail-zone-container');
+                document.getElementById('detail-list-title').innerText = list.name;
+                const container = document.getElementById('detail-zone-container');
                 container.innerHTML = '';
                 
                 for (let i = 0; i < 8; i++) {
@@ -497,8 +488,7 @@
                     btn.onclick = () => {
                         this.state.currentZoneIndex = i;
                         this.prepareEditor(`Zone ${i + 1}`);
-                        this.navigate('view-draw-editor');
-                    };
+                        this.navigate('view-draw-editor');                    };
                     container.appendChild(btn);
                 }
             },
@@ -508,7 +498,7 @@
                     alert("Impossible de supprimer la dernière liste !");
                     return;
                 }
-                const confirmed = confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette liste ?\n\nTous les dessins associés seront perdus définitivement.\n\nValider pour supprimer, Annuler pour garder.");
+                const confirmed = confirm("⚠️ Supprimer cette liste ?\n\nValider pour supprimer, Annuler pour garder.");
                 if (confirmed) {
                     this.data.lists = this.data.lists.filter(l => l.id !== this.state.currentListId);
                     this.saveData();
@@ -537,7 +527,8 @@
                         this.navigate('view-performance');
                     };
                     container.appendChild(btn);
-                });            },
+                });
+            },
 
             setupEditorMode: function() {
                 this.state.editorEraserMode = false;
@@ -546,8 +537,7 @@
             },
 
             prepareEditor: function(title) {
-                const ctx = this.elements.editorCtx;
-                ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
+                const ctx = this.elements.editorCtx;                ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
                 
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[this.state.currentZoneIndex]) {
@@ -566,12 +556,9 @@
             selectEditorColor: function(color, btn) {
                 this.state.editorColor = color;
                 this.elements.editorCurrentColorIndicator.style.background = color;
-                
                 document.querySelectorAll('#editor-color-popup .color-option').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
-                
                 this.elements.editorColorPopup.classList.remove('active');
-                
                 this.state.editorEraserMode = false;
                 this.elements.editorEraserBtn.classList.remove('active');
             },
@@ -579,14 +566,14 @@
             toggleEditorEraser: function() {
                 this.state.editorEraserMode = !this.state.editorEraserMode;
                 this.elements.editorEraserBtn.classList.toggle('active');
-                
                 if (this.state.editorEraserMode) {
                     this.elements.editorColorPopup.classList.remove('active');
                 }
             },
 
             saveZoneDrawing: function() {
-                const dataURL = this.elements.editorCanvas.toDataURL();                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                const dataURL = this.elements.editorCanvas.toDataURL();
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 list.zones[this.state.currentZoneIndex] = dataURL;
                 this.saveData();
                 this.navigate('view-list-detail');
@@ -599,8 +586,7 @@
                 this.state.isZoneMode = false;
                 this.state.isEraserMode = false;
                 this.state.strokes = [];
-                this.state.zoneImageLoaded = false;
-                
+                this.state.zoneImageLoaded = false;                
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
                 this.elements.eraserBtn.classList.remove('active');
@@ -614,7 +600,6 @@
                 for (let i = 0; i < 8; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'zone-cell';
-                    
                     cell.addEventListener('touchstart', (e) => {
                         if (this.state.isZoneMode) {
                             e.preventDefault();
@@ -622,7 +607,6 @@
                             this.loadZoneImage(i);
                         }
                     }, { passive: false });
-                    
                     cell.addEventListener('mousedown', (e) => {
                         if (this.state.isZoneMode) {
                             e.preventDefault();
@@ -630,12 +614,12 @@
                             this.loadZoneImage(i);
                         }
                     });
-                    
                     this.elements.perfOverlay.appendChild(cell);
                 }
             },
 
-            loadZoneImage: function(index) {                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+            loadZoneImage: function(index) {
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[index]) {
                     const ctx = this.elements.perfCtx;
                     const img = new Image();
@@ -647,15 +631,12 @@
                     };
                     img.src = list.zones[index];
                 }
-                
                 this.deactivateZoneMode();
             },
 
             activateZoneMode: function() {
-                this.state.isZoneMode = true;
-                this.elements.perfOverlay.classList.add('active');
+                this.state.isZoneMode = true;                this.elements.perfOverlay.classList.add('active');
                 this.elements.perfCanvas.style.pointerEvents = 'none';
-
                 this.elements.eraserBtn.classList.add('flash');
                 setTimeout(() => {
                     this.elements.eraserBtn.classList.remove('flash');
@@ -675,79 +656,35 @@
             selectColor: function(color, btn) {
                 this.state.color = color;
                 this.elements.currentColorIndicator.style.background = color;
-                
                 document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
-                
                 this.elements.colorPopup.classList.remove('active');
-                
                 this.state.isEraserMode = false;
                 this.elements.eraserBtn.classList.remove('active');
             },
+
             toggleEraser: function() {
                 this.state.isEraserMode = !this.state.isEraserMode;
                 this.elements.eraserBtn.classList.toggle('active');
-                
                 if (this.state.isEraserMode) {
                     this.elements.colorPopup.classList.remove('active');
                 }
             },
 
-            setupDrawingMode: function(canvas, ctx, isPerformance = false) {
+            setupDrawingMode: function(canvas, ctx, isPerformance) {
                 let isDrawing = false;
                 let pressTimer = null;
-                let startX = 0;
-                let startY = 0;
+                let startX = 0, startY = 0;
                 let hasMoved = false;
                 let currentStroke = null;
 
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
-                        return {
-                            x: e.touches[0].clientX - rect.left,
-                            y: e.touches[0].clientY - rect.top
-                        };
+                        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
                     }
-                    return {
-                        x: e.clientX - rect.left,
-                        y: e.clientY - rect.top
-                    };
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
                 };
-
-                const isPointNearStroke = (point, stroke, threshold = 20) => {
-                    for (let i = 0; i < stroke.points.length - 1; i++) {
-                        const p1 = stroke.points[i];
-                        const p2 = stroke.points[i + 1];
-                        const dist = this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
-                        if (dist < threshold) {
-                            return true;
-                        }
-                    }
-                    return false;
-                };
-
-                const eraseAtPoint = (point) => {
-                    for (let i = this.state.strokes.length - 1; i >= 0; i--) {
-                        if (isPointNearStroke(point, this.state.strokes[i])) {
-                            this.state.strokes.splice(i, 1);
-                            this.redrawAllStrokes(ctx);
-                            return true;
-                        }                    }
-                    
-                    if (this.state.zoneImageLoaded && isPerformance) {
-                        const eraseRadius = 20;
-                        ctx.globalCompositeOperation = 'destination-out';
-                        ctx.beginPath();
-                        ctx.arc(point.x, point.y, eraseRadius, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.globalCompositeOperation = 'source-over';
-                        return true;
-                    }
-                    
-                    return false;
-                };
-
                 const startDraw = (e) => {
                     e.preventDefault();
                     isDrawing = true;
@@ -756,25 +693,21 @@
                     startX = coords.x;
                     startY = coords.y;
                     
-                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
-                    const currentColor = isPerformance ? this.state.color : this.state.editorColor;
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    const color = isPerformance ? this.state.color : this.state.editorColor;
                     
-                    if (currentEraserMode) {
-                        eraseAtPoint(coords);
+                    if (eraserMode) {
+                        this.eraseAtPoint(coords, ctx, isPerformance);
                         return;
                     }
                     
-                    currentStroke = {
-                        color: currentColor,
-                        points: [coords]
-                    };
-                    
+                    currentStroke = { color: color, points: [coords] };
                     ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
-                    ctx.strokeStyle = currentColor;
+                    ctx.strokeStyle = color;
                     
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
@@ -782,95 +715,83 @@
                                 this.activateZoneMode();
                             }
                         }, 700);
-                    }                };
+                    }
+                };
 
                 const draw = (e) => {
                     if (!isDrawing || !currentStroke) return;
                     e.preventDefault();
-                    
                     const coords = getCoords(e);
                     const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
                     if (dist > 10) {
                         hasMoved = true;
-                        if (pressTimer) {
-                            clearTimeout(pressTimer);
-                            pressTimer = null;
-                        }
+                        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     }
-
                     currentStroke.points.push(coords);
                     ctx.lineTo(coords.x, coords.y);
                     ctx.stroke();
                 };
 
-                const endDraw = (e) => {
-                    if (isDrawing && currentStroke && currentStroke.points.length > 0) {
-                        this.state.strokes.push(currentStroke);
+                const endDraw = () => {
+                    if (isDrawing && currentStroke && currentStroke.points.length > 0) {                        this.state.strokes.push(currentStroke);
                     }
                     isDrawing = false;
                     currentStroke = null;
-                    if (pressTimer) {
-                        clearTimeout(pressTimer);
-                        pressTimer = null;
-                    }
+                    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     ctx.beginPath();
                 };
 
                 const eraseMove = (e) => {
                     if (!isDrawing) return;
-                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
-                    if (!currentEraserMode) return;
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (!eraserMode) return;
                     e.preventDefault();
-                    const coords = getCoords(e);
-                    eraseAtPoint(coords);
+                    this.eraseAtPoint(getCoords(e), ctx, isPerformance);
                 };
 
-                canvas.addEventListener('mousedown', (e) => {
-                    startDraw(e);
-                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
-                    if (currentEraserMode) {
-                        isDrawing = true;
-                    }
-                });                canvas.addEventListener('mousemove', (e) => {
-                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
-                    if (currentEraserMode) {
-                        eraseMove(e);
-                    } else {
-                        draw(e);
-                    }
-                });
+                canvas.addEventListener('mousedown', (e) => { startDraw(e); if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) isDrawing = true; });
+                canvas.addEventListener('mousemove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); });
                 canvas.addEventListener('mouseup', endDraw);
                 canvas.addEventListener('mouseleave', endDraw);
-
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
-                canvas.addEventListener('touchmove', (e) => {
-                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
-                    if (currentEraserMode) {
-                        eraseMove(e);
-                    } else {
-                        draw(e);
-                    }
-                }, { passive: false });
+                canvas.addEventListener('touchmove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); }, { passive: false });
                 canvas.addEventListener('touchend', endDraw);
                 canvas.addEventListener('touchcancel', endDraw);
             },
 
+            eraseAtPoint: function(point, ctx, isPerformance) {
+                for (let i = this.state.strokes.length - 1; i >= 0; i--) {
+                    if (this.isPointNearStroke(point, this.state.strokes[i])) {
+                        this.state.strokes.splice(i, 1);
+                        this.redrawAllStrokes(ctx);
+                        return;
+                    }
+                }
+                if (this.state.zoneImageLoaded && isPerformance) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+            },
+
+            isPointNearStroke: function(point, stroke) {
+                for (let i = 0; i < stroke.points.length - 1; i++) {
+                    const p1 = stroke.points[i], p2 = stroke.points[i + 1];
+                    if (this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y) < 20) return true;
+                }
+                return false;
+            },
             pointToSegmentDistance: function(px, py, x1, y1, x2, y2) {
-                const A = px - x1;
-                const B = py - y1;
-                const C = x2 - x1;
-                const D = y2 - y1;
-                const dot = A * C + B * D;
-                const lenSq = C * C + D * D;
-                let param = -1;
-                if (lenSq !== 0) param = dot / lenSq;
+                const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+                const dot = A * C + B * D, lenSq = C * C + D * D;
+                let param = lenSq !== 0 ? dot / lenSq : -1;
                 let xx, yy;
                 if (param < 0) { xx = x1; yy = y1; }
                 else if (param > 1) { xx = x2; yy = y2; }
                 else { xx = x1 + param * C; yy = y1 + param * D; }
-                const dx = px - xx;
-                const dy = py - yy;
-                return Math.sqrt(dx * dx + dy * dy);
+                return Math.sqrt(Math.pow(px - xx, 2) + Math.pow(py - yy, 2));
             },
 
             redrawAllStrokes: function(ctx) {
@@ -880,11 +801,10 @@
                     ctx.beginPath();
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
                     ctx.strokeStyle = stroke.color;
-                    for (let i = 1; i < stroke.points.length; i++) {
-                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
-                    }
+                    for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     ctx.stroke();
                 });
             },
@@ -898,24 +818,10 @@
                 ctx.scale(dpr, dpr);
                 canvas.style.width = rect.width + 'px';
                 canvas.style.height = rect.height + 'px';
-            },
-            
-            clearCanvas: function(type) {
-                if (confirm("Effacer tout le dessin ?")) {
-                    const ctx = type === 'perf' ? this.elements.perfCtx : this.elements.editorCtx;
-                    const canvas = type === 'perf' ? this.elements.perfCanvas : this.elements.editorCanvas;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    if (type === 'perf') {
-                        this.state.strokes = [];
-                        this.state.zoneImageLoaded = false;
-                    }
-                }
             }
         };
 
-        window.onload = function() {
-            app.init();
-        };
+        window.onload = function() { app.init(); };
     </script>
 </body>
 </html>
