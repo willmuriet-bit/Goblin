@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pad Interactif Pro</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#333333">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PadPro">
+    <link rel="apple-touch-icon" href="app-192.png">
+
+    <!-- Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ SW registered'))
+            .catch(err => console.log('❌ SW error:', err));
+        });
+      }
+    </script>
+    
     <style>
         :root {
             --primary: #333;
@@ -27,8 +47,7 @@
         }
 
         .view {
-            display: none;
-            width: 100vw;
+            display: none;            width: 100vw;
             height: 100vh;
             flex-direction: column;
             align-items: center;
@@ -47,7 +66,8 @@
         button {
             padding: 15px 30px;
             margin: 10px;
-            font-size: 1.2rem;            border: 2px solid var(--primary);
+            font-size: 1.2rem;
+            border: 2px solid var(--primary);
             background: white;
             color: var(--primary);
             cursor: pointer;
@@ -76,7 +96,6 @@
             background: var(--danger);
             color: white;
         }
-
         canvas {
             touch-action: none;
             cursor: crosshair;
@@ -96,7 +115,8 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr 1fr;
             pointer-events: none;
-            z-index: 20;        }
+            z-index: 20;
+        }
 
         .zone-cell { }
 
@@ -125,8 +145,7 @@
             align-items: center;
         }
 
-        .editor-toolbar {
-            position: absolute;
+        .editor-toolbar {            position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
@@ -145,7 +164,8 @@
             height: 45px;
             border-radius: 50%;
             border: 2px solid #333;
-            cursor: pointer;            position: relative;
+            cursor: pointer;
+            position: relative;
             background: white;
             display: flex;
             align-items: center;
@@ -174,8 +194,7 @@
 
         .color-popup.active {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(4, 1fr);            gap: 8px;
         }
 
         .color-option {
@@ -194,7 +213,8 @@
 
         .eraser-btn {
             width: 45px;
-            height: 45px;            border-radius: 50%;
+            height: 45px;
+            border-radius: 50%;
             border: 2px solid #333;
             cursor: pointer;
             background: #cccccc;
@@ -224,7 +244,6 @@
             background: #ffcccc;
             border-color: var(--danger);
         }
-
         .eraser-btn.active::before {
             background: repeating-linear-gradient(
                 45deg,
@@ -244,9 +263,10 @@
             50% { transform: scale(1.2); box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.4); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
         }
+
         .save-btn {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             border: 2px solid var(--success);
             cursor: pointer;
@@ -254,7 +274,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            padding: 0;
+            margin: 0 5px;
         }
 
         .save-btn:active {
@@ -263,16 +285,17 @@
         }
 
         .back-btn {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             border: 2px solid #333;
             cursor: pointer;
             background: white;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
+            align-items: center;            justify-content: center;
+            font-size: 1rem;
+            padding: 0;
+            margin: 0 5px;
         }
 
         .back-btn:active {
@@ -292,7 +315,8 @@
 
         .zone-editor-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             width: 90%;
             max-width: 450px;
             z-index: 100;
@@ -311,14 +335,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 15px;
         }
 
         .list-title-container h2 {
             margin: 0;
-            font-size: 1.3rem;
-        }
+            font-size: 1.3rem;        }
     </style>
 </head>
 <body>
@@ -341,7 +364,8 @@
             <button class="back-btn" onclick="app.navigate('view-list-manager')">⬅️</button>
             <h2 id="detail-list-title">Liste X</h2>
             <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>
-        </div>        <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
+        </div>
+        <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
         <div class="zone-editor-grid" id="detail-zone-container"></div>
         <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
     </div>
@@ -366,8 +390,7 @@
                 <div class="color-option" style="background:blue" onclick="app.selectEditorColor('blue', this)"></div>
                 <div class="color-option" style="background:green" onclick="app.selectEditorColor('green', this)"></div>
                 <div class="color-option" style="background:orange" onclick="app.selectEditorColor('orange', this)"></div>
-                <div class="color-option" style="background:purple" onclick="app.selectEditorColor('purple', this)"></div>
-                <div class="color-option" style="background:pink" onclick="app.selectEditorColor('pink', this)"></div>
+                <div class="color-option" style="background:purple" onclick="app.selectEditorColor('purple', this)"></div>                <div class="color-option" style="background:pink" onclick="app.selectEditorColor('pink', this)"></div>
                 <div class="color-option" style="background:brown" onclick="app.selectEditorColor('brown', this)"></div>
             </div>
             <div class="save-btn" onclick="app.saveZoneDrawing()">💾</div>
@@ -390,7 +413,8 @@
                 <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
                 <div class="color-option" style="background:orange" onclick="app.selectColor('orange', this)"></div>
                 <div class="color-option" style="background:purple" onclick="app.selectColor('purple', this)"></div>
-                <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>                <div class="color-option" style="background:brown" onclick="app.selectColor('brown', this)"></div>
+                <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>
+                <div class="color-option" style="background:brown" onclick="app.selectColor('brown', this)"></div>
             </div>
         </div>
     </div>
@@ -408,14 +432,14 @@
                 isEraserMode: false,
                 editorEraserMode: false,
                 strokes: [],
-                zoneImageLoaded: false
+                zoneImageLoaded: false,
+                longPressDisabled: false
             },
             elements: {},
 
             init: function() {
                 this.elements.perfCanvas = document.getElementById('perf-canvas');
-                this.elements.editorCanvas = document.getElementById('editor-canvas');
-                this.elements.perfOverlay = document.getElementById('perf-zone-overlay');
+                this.elements.editorCanvas = document.getElementById('editor-canvas');                this.elements.perfOverlay = document.getElementById('perf-zone-overlay');
                 this.elements.colorPopup = document.getElementById('color-popup');
                 this.elements.currentColorIndicator = document.getElementById('current-color-indicator');
                 this.elements.eraserBtn = document.getElementById('eraser-btn');
@@ -439,6 +463,7 @@
                 this.initZoneOverlay();
                 this.renderListManager();
             },
+
             saveData: function() {
                 localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));
             },
@@ -463,8 +488,7 @@
                     const btn = document.createElement('button');
                     btn.innerText = list.name;
                     btn.onclick = () => {
-                        this.state.currentListId = list.id;
-                        this.renderListDetail();
+                        this.state.currentListId = list.id;                        this.renderListDetail();
                         this.navigate('view-list-detail');
                     };
                     container.appendChild(btn);
@@ -488,7 +512,8 @@
                     const btn = document.createElement('button');
                     btn.innerText = `Zone ${i + 1}`;
                     btn.onclick = () => {
-                        this.state.currentZoneIndex = i;                        this.prepareEditor(`Zone ${i + 1}`);
+                        this.state.currentZoneIndex = i;
+                        this.prepareEditor(`Zone ${i + 1}`);
                         this.navigate('view-draw-editor');
                     };
                     container.appendChild(btn);
@@ -512,8 +537,7 @@
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 const newName = prompt("Nouveau nom :", list.name);
                 if (newName) {
-                    list.name = newName;
-                    this.saveData();
+                    list.name = newName;                    this.saveData();
                     this.renderListDetail();
                 }
             },
@@ -537,6 +561,7 @@
                 this.elements.editorEraserBtn.classList.remove('active');
                 this.elements.editorColorPopup.classList.remove('active');
             },
+
             prepareEditor: function(title) {
                 const ctx = this.elements.editorCtx;
                 ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
@@ -561,8 +586,7 @@
                 document.querySelectorAll('#editor-color-popup .color-option').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.elements.editorColorPopup.classList.remove('active');
-                this.state.editorEraserMode = false;
-                this.elements.editorEraserBtn.classList.remove('active');
+                this.state.editorEraserMode = false;                this.elements.editorEraserBtn.classList.remove('active');
             },
 
             toggleEditorEraser: function() {
@@ -586,8 +610,10 @@
                 ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                 
                 this.state.isZoneMode = false;
-                this.state.isEraserMode = false;                this.state.strokes = [];
+                this.state.isEraserMode = false;
+                this.state.strokes = [];
                 this.state.zoneImageLoaded = false;
+                this.state.longPressDisabled = false;
                 
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
@@ -609,8 +635,7 @@
                             this.loadZoneImage(i);
                         }
                     }, { passive: false });
-                    cell.addEventListener('mousedown', (e) => {
-                        if (this.state.isZoneMode) {
+                    cell.addEventListener('mousedown', (e) => {                        if (this.state.isZoneMode) {
                             e.preventDefault();
                             e.stopPropagation();
                             this.loadZoneImage(i);
@@ -629,12 +654,14 @@
                         ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                         this.state.strokes = [];
                         this.state.zoneImageLoaded = true;
+                        this.state.longPressDisabled = true;
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
                     img.src = list.zones[index];
                 }
                 this.deactivateZoneMode();
             },
+
             activateZoneMode: function() {
                 this.state.isZoneMode = true;
                 this.elements.perfOverlay.classList.add('active');
@@ -657,8 +684,7 @@
 
             selectColor: function(color, btn) {
                 this.state.color = color;
-                this.elements.currentColorIndicator.style.background = color;
-                document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+                this.elements.currentColorIndicator.style.background = color;                document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.elements.colorPopup.classList.remove('active');
                 this.state.isEraserMode = false;
@@ -684,7 +710,8 @@
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
-                        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };                    }
+                        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                    }
                     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
                 };
 
@@ -706,8 +733,7 @@
                             return;
                         }
                     }
-                    if (this.state.zoneImageLoaded && isPerformance) {
-                        ctx.globalCompositeOperation = 'destination-out';
+                    if (this.state.zoneImageLoaded && isPerformance) {                        ctx.globalCompositeOperation = 'destination-out';
                         ctx.beginPath();
                         ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
                         ctx.fill();
@@ -733,13 +759,14 @@
                     }
                     
                     currentStroke = { color: color, points: [coords] };
-                    ctx.beginPath();                    ctx.moveTo(coords.x, coords.y);
+                    ctx.beginPath();
+                    ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.strokeStyle = color;
                     
-                    if (isPerformance) {
+                    if (isPerformance && !this.state.longPressDisabled) {
                         pressTimer = setTimeout(() => {
                             if (!hasMoved && isDrawing) {
                                 this.activateZoneMode();
@@ -755,8 +782,7 @@
                     const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
                     if (dist > 10) {
                         hasMoved = true;
-                        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-                    }
+                        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }                    }
                     currentStroke.points.push(coords);
                     
                     if (lastPoint && currentStroke.points.length > 2) {
@@ -782,6 +808,7 @@
                     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     ctx.beginPath();
                 };
+
                 const eraseMove = (e) => {
                     if (!isDrawing) return;
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
@@ -804,8 +831,7 @@
                 canvas.addEventListener('mouseleave', endDraw);
 
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
-                canvas.addEventListener('touchmove', (e) => {
-                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                canvas.addEventListener('touchmove', (e) => {                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     if (eraserMode) eraseMove(e);
                     else draw(e);
                 }, { passive: false });
@@ -831,7 +857,8 @@
                     ctx.beginPath();
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
                     ctx.strokeStyle = stroke.color;
                     for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     ctx.stroke();
