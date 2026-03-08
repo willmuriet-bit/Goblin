@@ -395,7 +395,7 @@
 
     <script>
         const app = {
-             { lists: [] },
+            data: { lists: [] },
             state: {
                 currentListId: null,
                 currentZoneIndex: null,
@@ -757,7 +757,6 @@
                     }
                     currentStroke.points.push(coords);
                     
-                    // AMÉLIORATION: Lissage avec courbes quadratiques
                     if (lastPoint && currentStroke.points.length > 2) {
                         const midPoint = {
                             x: (lastPoint.x + coords.x) / 2,
@@ -782,8 +781,8 @@
                     ctx.beginPath();
                 };
 
-                const eraseMove = (e) => {                    if (!isDrawing) return;
-                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                const eraseMove = (e) => {
+                    if (!isDrawing) return;                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     if (!eraserMode) return;
                     e.preventDefault();
                     eraseAtPoint(getCoords(e));
@@ -831,13 +830,12 @@
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';                    ctx.strokeStyle = stroke.color;
-                    for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = stroke.color;                    for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     ctx.stroke();
                 });
             },
 
-            // AMÉLIORATION: Canvas haute résolution sans casser le dessin
             resizeCanvas: function(canvas) {
                 const dpr = window.devicePixelRatio || 1;
                 const rect = canvas.getBoundingClientRect();
