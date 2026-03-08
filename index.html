@@ -685,6 +685,33 @@
                     }
                     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
                 };
+                const isPointNearStroke = (point, stroke, threshold = 20) => {
+                    for (let i = 0; i < stroke.points.length - 1; i++) {
+                        const p1 = stroke.points[i];
+                        const p2 = stroke.points[i + 1];
+                        const dist = this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
+                        if (dist < threshold) return true;
+                    }
+                    return false;
+                };
+
+                const eraseAtPoint = (point) => {
+                    for (let i = this.state.strokes.length - 1; i >= 0; i--) {
+                        if (isPointNearStroke(point, this.state.strokes[i])) {
+                            this.state.strokes.splice(i, 1);
+                            this.redrawAllStrokes(ctx);
+                            return;
+                        }
+                    }
+                    if (this.state.zoneImageLoaded && isPerformance) {
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
+                };
+
                 const startDraw = (e) => {
                     e.preventDefault();
                     isDrawing = true;
@@ -697,7 +724,7 @@
                     const color = isPerformance ? this.state.color : this.state.editorColor;
                     
                     if (eraserMode) {
-                        this.eraseAtPoint(coords, ctx, isPerformance);
+                        eraseAtPoint(coords);
                         return;
                     }
                     
@@ -706,8 +733,7 @@
                     ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.strokeStyle = color;
+                    ctx.lineJoin = 'round';                    ctx.strokeStyle = color;
                     
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
@@ -733,7 +759,8 @@
                 };
 
                 const endDraw = () => {
-                    if (isDrawing && currentStroke && currentStroke.points.length > 0) {                        this.state.strokes.push(currentStroke);
+                    if (isDrawing && currentStroke && currentStroke.points.length > 0) {
+                        this.state.strokes.push(currentStroke);
                     }
                     isDrawing = false;
                     currentStroke = null;
@@ -746,43 +773,33 @@
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     if (!eraserMode) return;
                     e.preventDefault();
-                    this.eraseAtPoint(getCoords(e), ctx, isPerformance);
+                    eraseAtPoint(getCoords(e));
                 };
 
-                canvas.addEventListener('mousedown', (e) => { startDraw(e); if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) isDrawing = true; });
-                canvas.addEventListener('mousemove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); });
+                // Souris
+                canvas.addEventListener('mousedown', (e) => {
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    startDraw(e);
+                    if (eraserMode) isDrawing = true;
+                });
+                canvas.addEventListener('mousemove', (e) => {                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (eraserMode) eraseMove(e);
+                    else draw(e);
+                });
                 canvas.addEventListener('mouseup', endDraw);
                 canvas.addEventListener('mouseleave', endDraw);
+
+                // Tactile
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
-                canvas.addEventListener('touchmove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); }, { passive: false });
+                canvas.addEventListener('touchmove', (e) => {
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (eraserMode) eraseMove(e);
+                    else draw(e);
+                }, { passive: false });
                 canvas.addEventListener('touchend', endDraw);
                 canvas.addEventListener('touchcancel', endDraw);
             },
 
-            eraseAtPoint: function(point, ctx, isPerformance) {
-                for (let i = this.state.strokes.length - 1; i >= 0; i--) {
-                    if (this.isPointNearStroke(point, this.state.strokes[i])) {
-                        this.state.strokes.splice(i, 1);
-                        this.redrawAllStrokes(ctx);
-                        return;
-                    }
-                }
-                if (this.state.zoneImageLoaded && isPerformance) {
-                    ctx.globalCompositeOperation = 'destination-out';
-                    ctx.beginPath();
-                    ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.globalCompositeOperation = 'source-over';
-                }
-            },
-
-            isPointNearStroke: function(point, stroke) {
-                for (let i = 0; i < stroke.points.length - 1; i++) {
-                    const p1 = stroke.points[i], p2 = stroke.points[i + 1];
-                    if (this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y) < 20) return true;
-                }
-                return false;
-            },
             pointToSegmentDistance: function(px, py, x1, y1, x2, y2) {
                 const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
                 const dot = A * C + B * D, lenSq = C * C + D * D;
@@ -810,17 +827,10 @@
             },
 
             resizeCanvas: function(canvas) {
-                const dpr = window.devicePixelRatio || 1;
-                const rect = canvas.getBoundingClientRect();
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                const ctx = canvas.getContext('2d');
-                ctx.scale(dpr, dpr);
-                canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
         };
-
         window.onload = function() { app.init(); };
     </script>
 </body>
