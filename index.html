@@ -442,7 +442,7 @@
                 this.initZoneOverlay();
                 this.renderListManager();
                 
-                console.log("✅ Application initialisée");
+                console.log("✅ Application initialisée - BOUTONS PRÊTS");
             },
 
             saveData: function() {
@@ -701,16 +701,6 @@
                 let hasMoved = false;
                 let currentStroke = null;
 
-                // Supprimer les anciens listeners pour éviter les conflits
-                canvas.onmousedown = null;
-                canvas.onmousemove = null;
-                canvas.onmouseup = null;
-                canvas.onmouseleave = null;
-                canvas.ontouchstart = null;
-                canvas.ontouchmove = null;
-                canvas.ontouchend = null;
-                canvas.ontouchcancel = null;
-
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
@@ -733,20 +723,18 @@
                         if (dist < threshold) {
                             return true;
                         }
-                    }                    return false;
+                    }
+                    return false;
                 };
 
                 const eraseAtPoint = (point) => {
-                    // Effacer les strokes
                     for (let i = this.state.strokes.length - 1; i >= 0; i--) {
                         if (isPointNearStroke(point, this.state.strokes[i])) {
                             this.state.strokes.splice(i, 1);
                             this.redrawAllStrokes(ctx);
                             return true;
-                        }
-                    }
+                        }                    }
                     
-                    // Effacer l'image de zone (gomme pixel)
                     if (this.state.zoneImageLoaded && isPerformance) {
                         const eraseRadius = 20;
                         ctx.globalCompositeOperation = 'destination-out';
@@ -771,10 +759,8 @@
                     const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     const currentColor = isPerformance ? this.state.color : this.state.editorColor;
                     
-                    // Mode gomme - fonctionne immédiatement
                     if (currentEraserMode) {
                         eraseAtPoint(coords);
-                        isDrawing = false;
                         return;
                     }
                     
@@ -782,22 +768,21 @@
                         color: currentColor,
                         points: [coords]
                     };
-                                        ctx.beginPath();
+                    
+                    ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.strokeStyle = currentColor;
                     
-                    // Long press 700ms pour activer mode zone
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
                             if (!hasMoved && isDrawing) {
                                 this.activateZoneMode();
                             }
                         }, 700);
-                    }
-                };
+                    }                };
 
                 const draw = (e) => {
                     if (!isDrawing || !currentStroke) return;
@@ -831,22 +816,24 @@
                     ctx.beginPath();
                 };
 
-                // Mode gomme continue                const eraseMove = (e) => {
-                    if (!isDrawing || !(isPerformance ? this.state.isEraserMode : this.state.editorEraserMode)) return;
+                const eraseMove = (e) => {
+                    if (!isDrawing) return;
+                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (!currentEraserMode) return;
                     e.preventDefault();
                     const coords = getCoords(e);
                     eraseAtPoint(coords);
                 };
 
-                // Événements souris
                 canvas.addEventListener('mousedown', (e) => {
                     startDraw(e);
-                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
+                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (currentEraserMode) {
                         isDrawing = true;
                     }
-                });
-                canvas.addEventListener('mousemove', (e) => {
-                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
+                });                canvas.addEventListener('mousemove', (e) => {
+                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (currentEraserMode) {
                         eraseMove(e);
                     } else {
                         draw(e);
@@ -855,10 +842,10 @@
                 canvas.addEventListener('mouseup', endDraw);
                 canvas.addEventListener('mouseleave', endDraw);
 
-                // Événements tactiles
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
                 canvas.addEventListener('touchmove', (e) => {
-                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
+                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (currentEraserMode) {
                         eraseMove(e);
                     } else {
                         draw(e);
@@ -873,25 +860,14 @@
                 const B = py - y1;
                 const C = x2 - x1;
                 const D = y2 - y1;
-
                 const dot = A * C + B * D;
                 const lenSq = C * C + D * D;
                 let param = -1;
-                
                 if (lenSq !== 0) param = dot / lenSq;
-
                 let xx, yy;
-                if (param < 0) {
-                    xx = x1;
-                    yy = y1;
-                } else if (param > 1) {
-                    xx = x2;
-                    yy = y2;
-                } else {
-                    xx = x1 + param * C;
-                    yy = y1 + param * D;
-                }
-
+                if (param < 0) { xx = x1; yy = y1; }
+                else if (param > 1) { xx = x2; yy = y2; }
+                else { xx = x1 + param * C; yy = y1 + param * D; }
                 const dx = px - xx;
                 const dy = py - yy;
                 return Math.sqrt(dx * dx + dy * dy);
@@ -899,17 +875,13 @@
 
             redrawAllStrokes: function(ctx) {
                 ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
-                
                 this.state.strokes.forEach(stroke => {
                     if (stroke.points.length < 2) return;
-                    
                     ctx.beginPath();
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';                    ctx.lineJoin = 'round';
                     ctx.strokeStyle = stroke.color;
-                    
                     for (let i = 1; i < stroke.points.length; i++) {
                         ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     }
@@ -920,16 +892,14 @@
             resizeCanvas: function(canvas) {
                 const dpr = window.devicePixelRatio || 1;
                 const rect = canvas.getBoundingClientRect();
-                
                 canvas.width = rect.width * dpr;
                 canvas.height = rect.height * dpr;
-                
                 const ctx = canvas.getContext('2d');
                 ctx.scale(dpr, dpr);
-                
                 canvas.style.width = rect.width + 'px';
                 canvas.style.height = rect.height + 'px';
-            },            
+            },
+            
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
                     const ctx = type === 'perf' ? this.elements.perfCtx : this.elements.editorCtx;
