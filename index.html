@@ -413,7 +413,7 @@
                 editorEraserMode: false,
                 strokes: [],
                 zoneImageLoaded: false,
-                eraserSegments: [] // Pour la gomme intelligente sur image
+                eraserSegments: []
             },
             elements: {},
 
@@ -504,7 +504,6 @@
                 }
             },
 
-            // CORRECTION 1: Message de confirmation pour supprimer
             deleteCurrentList: function() {
                 if (this.data.lists.length <= 1) {
                     alert("Impossible de supprimer la dernière liste !");
@@ -537,8 +536,8 @@
                     btn.onclick = () => {
                         this.state.currentListId = list.id;
                         this.navigate('view-performance');
-                    };                    container.appendChild(btn);
-                });
+                    };
+                    container.appendChild(btn);                });
             },
 
             setupEditorMode: function() {
@@ -586,8 +585,8 @@
                     this.elements.editorColorPopup.classList.remove('active');
                 }
             },
-            saveZoneDrawing: function() {
-                const dataURL = this.elements.editorCanvas.toDataURL();
+
+            saveZoneDrawing: function() {                const dataURL = this.elements.editorCanvas.toDataURL();
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 list.zones[this.state.currentZoneIndex] = dataURL;
                 this.saveData();
@@ -635,8 +634,8 @@
                     });
                     
                     this.elements.perfOverlay.appendChild(cell);
-                }            },
-
+                }
+            },
             loadZoneImage: function(index) {
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[index]) {
@@ -645,7 +644,7 @@
                     img.onload = () => {
                         ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                         this.state.strokes = [];
-                        this.state.eraserSegments = []; // Reset segments pour gomme intelligente
+                        this.state.eraserSegments = [];
                         this.state.zoneImageLoaded = true;
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
@@ -684,8 +683,8 @@
                 btn.classList.add('selected');
                 
                 this.elements.colorPopup.classList.remove('active');
-                                this.state.isEraserMode = false;
-                this.elements.eraserBtn.classList.remove('active');
+                
+                this.state.isEraserMode = false;                this.elements.eraserBtn.classList.remove('active');
             },
 
             toggleEraser: function() {
@@ -697,7 +696,6 @@
                 }
             },
 
-            // CORRECTION 4: Qualité de dessin améliorée
             setupDrawingMode: function(canvas, ctx, isPerformance = false) {
                 let isDrawing = false;
                 let pressTimer = null;
@@ -733,17 +731,14 @@
                     return false;
                 };
 
-                // CORRECTION 2: Gomme intelligente qui efface trait par trait                const eraseAtPoint = (point) => {
-                    // D'abord vérifier les strokes dessinés
+                const eraseAtPoint = (point) => {
                     for (let i = this.state.strokes.length - 1; i >= 0; i--) {
-                        if (isPointNearStroke(point, this.state.strokes[i])) {
-                            this.state.strokes.splice(i, 1);
+                        if (isPointNearStroke(point, this.state.strokes[i])) {                            this.state.strokes.splice(i, 1);
                             this.redrawAllStrokes(ctx);
                             return true;
                         }
                     }
                     
-                    // Si une image de zone est chargée, utiliser la gomme pixel par pixel
                     if (this.state.zoneImageLoaded && isPerformance) {
                         const eraseRadius = 20;
                         ctx.globalCompositeOperation = 'destination-out';
@@ -782,12 +777,12 @@
                         yy = y1 + param * D;
                     }
 
-                    const dx = px - xx;                    const dy = py - yy;
+                    const dx = px - xx;
+                    const dy = py - yy;
                     return Math.sqrt(dx * dx + dy * dy);
                 };
 
-                const startDraw = (e) => {
-                    e.preventDefault();
+                const startDraw = (e) => {                    e.preventDefault();
                     isDrawing = true;
                     hasMoved = false;
                     const coords = getCoords(e);
@@ -798,7 +793,6 @@
                     const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     const currentColor = isPerformance ? this.state.color : this.state.editorColor;
                     
-                    // CORRECTION 2: La gomme fonctionne immédiatement
                     if (currentEraserMode) {
                         eraseAtPoint(coords);
                         isDrawing = false;
@@ -812,7 +806,6 @@
                     
                     ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
-                    // CORRECTION 4: Meilleure qualité de ligne
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
@@ -831,18 +824,17 @@
                     if (!isDrawing || !currentStroke) return;
                     e.preventDefault();
                     
-                    const coords = getCoords(e);                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
+                    const coords = getCoords(e);
+                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
                     if (dist > 10) {
                         hasMoved = true;
                         if (pressTimer) {
                             clearTimeout(pressTimer);
                             pressTimer = null;
-                        }
-                    }
+                        }                    }
 
                     currentStroke.points.push(coords);
                     
-                    // CORRECTION 4: Lissage des traits avec courbes quadratiques
                     if (lastPoint && currentStroke.points.length > 2) {
                         const midPoint = {
                             x: (lastPoint.x + coords.x) / 2,
@@ -870,7 +862,6 @@
                     ctx.beginPath();
                 };
 
-                // Mode gomme pour dessin continu
                 const eraseMove = (e) => {
                     if (!isDrawing || !this.state.isEraserMode) return;
                     e.preventDefault();
@@ -880,9 +871,9 @@
 
                 canvas.addEventListener('mousedown', startDraw);
                 canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('mouseup', endDraw);                canvas.addEventListener('mouseleave', endDraw);
+                canvas.addEventListener('mouseup', endDraw);
+                canvas.addEventListener('mouseleave', endDraw);
                 
-                // Événements pour la gomme continue
                 canvas.addEventListener('mousedown', (e) => {
                     if (this.state.isEraserMode) {
                         isDrawing = true;
@@ -890,7 +881,6 @@
                 });
                 canvas.addEventListener('mousemove', eraseMove);
                 canvas.addEventListener('mouseup', () => { isDrawing = false; });
-
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
                 canvas.addEventListener('touchmove', draw, { passive: false });
                 canvas.addEventListener('touchend', endDraw);
@@ -917,7 +907,6 @@
                 });
             },
 
-            // CORRECTION 4: Canvas haute résolution
             resizeCanvas: function(canvas) {
                 const dpr = window.devicePixelRatio || 1;
                 const rect = canvas.getBoundingClientRect();
@@ -929,7 +918,8 @@
                 ctx.scale(dpr, dpr);
                 
                 canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';            },
+                canvas.style.height = rect.height + 'px';
+            },
             
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
@@ -939,8 +929,7 @@
                     if (type === 'perf') {
                         this.state.strokes = [];
                         this.state.zoneImageLoaded = false;
-                    }
-                }
+                    }                }
             }
         };
 
