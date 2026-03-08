@@ -10,6 +10,7 @@
             --bg: #ffffff;
             --border-flash: #ff0000;
             --danger: #dc3545;
+            --success: #28a745;
         }
 
         body, html {
@@ -46,8 +47,8 @@
         button {
             padding: 15px 30px;
             margin: 10px;
-            font-size: 1.2rem;
-            border: 2px solid var(--primary);            background: white;
+            font-size: 1.2rem;            border: 2px solid var(--primary);
+            background: white;
             color: var(--primary);
             cursor: pointer;
             border-radius: 8px;
@@ -95,8 +96,8 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr 1fr;
             pointer-events: none;
-            z-index: 20;
-        }
+            z-index: 20;        }
+
         .zone-cell { }
 
         .zone-overlay.active {
@@ -109,6 +110,7 @@
             transition: border 0.1s;
         }
 
+        /* Toolbar pour PERFORMANCE */
         .toolbar {
             position: absolute;
             bottom: 30px;
@@ -124,11 +126,26 @@
             align-items: center;
         }
 
+        /* Toolbar pour ÉDITEUR DE ZONES */
+        .editor-toolbar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            align-items: center;
+        }
+
         /* Bouton couleur rond */
         .color-picker-btn {
             width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            height: 50px;            border-radius: 50%;
             border: 3px solid #333;
             cursor: pointer;
             position: relative;
@@ -145,7 +162,8 @@
             background: black;
         }
 
-        /* Popup de couleurs */        .color-popup {
+        /* Popup de couleurs */
+        .color-popup {
             position: absolute;
             bottom: 90px;
             left: 50%;
@@ -177,7 +195,6 @@
             border-width: 3px;
             transform: scale(1.1);
         }
-
         /* Bouton gomme - CERCLE GRIS AVEC RAYURES */
         .eraser-btn {
             width: 50px;
@@ -194,7 +211,8 @@
         }
 
         .eraser-btn::before {
-            content: '';            position: absolute;
+            content: '';
+            position: absolute;
             width: 100%;
             height: 100%;
             background: repeating-linear-gradient(
@@ -222,55 +240,95 @@
             );
         }
 
-        #mode-indicator {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 5px 10px;
-            background: #eee;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            z-index: 100;
+        /* Effet visuel quand mode zone activé (0.5s) */
+        .eraser-btn.flash {
+            animation: eraserFlash 0.5s ease-out;
+        }
+        @keyframes eraserFlash {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            50% { transform: scale(1.2); box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.4); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        /* Bouton sauvegarder */
+        .save-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--success);
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .save-btn:active {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Bouton retour */
+        .back-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .back-btn:active {
+            background: #333;
+            color: white;
         }
 
         .list-grid {
             display: flex;
             flex-direction: column;
             width: 80%;
-            max-width: 400px;
-            max-height: 80vh;
+            max-width: 400px;            max-height: 80vh;
             overflow-y: auto;
             z-index: 100;
         }
 
-        .zone-editor-grid {            display: grid;
+        /* CORRECTION: Grille des zones ajustée pour ne pas déborder */
+        .zone-editor-grid {
+            display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px; /* Réduit pour éviter le débordement */
             z-index: 100;
+            padding: 10px;
         }
 
-        .editor-toolbar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .zone-editor-grid button {
+            min-width: auto; /* Enlève la largeur minimale */
+            width: 100%; /* Prend toute la largeur de sa cellule */
+            padding: 20px 10px; /* Padding réduit */
+            font-size: 1rem; /* Police plus petite */
+        }
+
+        .list-title-container {
             display: flex;
-            gap: 10px;
-            z-index: 100;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .list-title-container h2 {
+            margin: 0;
         }
     </style>
 </head>
 <body>
-
-    <div id="mode-indicator">Mode: DESSIN</div>
 
     <!-- VUE 1: ACCUEIL -->
     <div id="view-home" class="view active">
@@ -283,16 +341,19 @@
     <div id="view-list-manager" class="view">
         <h2>Mes Listes</h2>
         <div class="list-grid" id="manager-list-container"></div>
-        <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>
-        <button class="small" onclick="app.navigate('view-home')">Retour</button>
+        <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>        <button class="small" onclick="app.navigate('view-home')">Retour</button>
     </div>
 
     <!-- VUE 3: DÉTAIL D'UNE LISTE -->
     <div id="view-list-detail" class="view">
-        <h2 id="detail-list-title">Liste X</h2>
+        <div class="list-title-container">
+            <button class="back-btn" onclick="app.navigate('view-list-manager')">⬅️</button>
+            <h2 id="detail-list-title">Liste X</h2>
+            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>
+        </div>
         <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
         <div class="zone-editor-grid" id="detail-zone-container"></div>
-        <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>        <button class="small" onclick="app.navigate('view-list-manager')">Retour aux listes</button>
+        <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
     </div>
 
     <!-- VUE 4: SÉLECTION DE LISTE -->
@@ -307,12 +368,30 @@
         <h3 id="editor-title">Dessin Zone X</h3>
         <canvas id="editor-canvas"></canvas>
         <div class="editor-toolbar">
-            <div class="color-btn selected" style="width:30px;height:30px;border-radius:50%;background:black;border:2px solid #ccc" onclick="app.setEditorColor('black', this)"></div>
-            <div class="color-btn" style="width:30px;height:30px;border-radius:50%;background:red;border:2px solid #ccc" onclick="app.setEditorColor('red', this)"></div>
-            <div class="color-btn" style="width:30px;height:30px;border-radius:50%;background:blue;border:2px solid #ccc" onclick="app.setEditorColor('blue', this)"></div>
-            <button class="small" onclick="app.clearCanvas('editor')">Effacer</button>
-            <button class="small" onclick="app.saveZoneDrawing()">Valider</button>
-            <button class="small" onclick="app.navigate('view-list-detail')">Annuler</button>
+            <!-- Bouton retour -->
+            <div class="back-btn" onclick="app.navigate('view-list-detail')">⬅️</div>
+            
+            <!-- Bouton gomme -->
+            <div class="eraser-btn" id="editor-eraser-btn" onclick="app.toggleEditorEraser()"></div>
+            
+            <!-- Sélecteur de couleur -->
+            <div class="color-picker-btn" onclick="app.toggleEditorColorPopup()">
+                <div class="inner-circle" id="editor-current-color-indicator"></div>
+            </div>
+            
+            <!-- Popup de couleurs -->
+            <div class="color-popup" id="editor-color-popup">
+                <div class="color-option selected" style="background:black" onclick="app.selectEditorColor('black', this)"></div>
+                <div class="color-option" style="background:red" onclick="app.selectEditorColor('red', this)"></div>
+                <div class="color-option" style="background:blue" onclick="app.selectEditorColor('blue', this)"></div>
+                <div class="color-option" style="background:green" onclick="app.selectEditorColor('green', this)"></div>
+                <div class="color-option" style="background:orange" onclick="app.selectEditorColor('orange', this)"></div>
+                <div class="color-option" style="background:purple" onclick="app.selectEditorColor('purple', this)"></div>
+                <div class="color-option" style="background:pink" onclick="app.selectEditorColor('pink', this)"></div>
+                <div class="color-option" style="background:brown" onclick="app.selectEditorColor('brown', this)"></div>
+            </div>
+                        <!-- Bouton sauvegarder -->
+            <div class="save-btn" onclick="app.saveZoneDrawing()">💾</div>
         </div>
     </div>
 
@@ -322,10 +401,10 @@
         <div class="zone-overlay" id="perf-zone-overlay"></div>
         
         <div class="toolbar">
-            <!-- BOUTON GOMME (maintenant à gauche) -->
+            <!-- BOUTON GOMME (à gauche) -->
             <div class="eraser-btn" id="eraser-btn" onclick="app.toggleEraser()"></div>
             
-            <!-- SÉLECTEUR DE COULEUR (maintenant à droite) -->
+            <!-- SÉLECTEUR DE COULEUR (à droite) -->
             <div class="color-picker-btn" onclick="app.toggleColorPopup()">
                 <div class="inner-circle" id="current-color-indicator"></div>
             </div>
@@ -341,9 +420,6 @@
                 <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>
                 <div class="color-option" style="background:brown" onclick="app.selectColor('brown', this)"></div>
             </div>
-        </div>        
-        <div style="position:absolute; top:10px; left:10px; font-size:0.8rem; color:#888; z-index:100;">
-            Appui long (700ms) pour activer les zones
         </div>
     </div>
 
@@ -355,21 +431,26 @@
                 currentZoneIndex: null,
                 isZoneMode: false,
                 color: 'black',
+                editorColor: 'black',
                 longPressTimer: null,
                 isEraserMode: false,
+                editorEraserMode: false,
                 strokes: [],
-                zoneImageLoaded: false // Nouveau: pour savoir si une image de zone est affichée
+                zoneImageLoaded: false
             },
             elements: {},
-
             init: function() {
                 this.elements.perfCanvas = document.getElementById('perf-canvas');
                 this.elements.editorCanvas = document.getElementById('editor-canvas');
                 this.elements.perfOverlay = document.getElementById('perf-zone-overlay');
-                this.elements.modeIndicator = document.getElementById('mode-indicator');
                 this.elements.colorPopup = document.getElementById('color-popup');
                 this.elements.currentColorIndicator = document.getElementById('current-color-indicator');
                 this.elements.eraserBtn = document.getElementById('eraser-btn');
+                
+                // Éléments pour l'éditeur
+                this.elements.editorColorPopup = document.getElementById('editor-color-popup');
+                this.elements.editorCurrentColorIndicator = document.getElementById('editor-current-color-indicator');
+                this.elements.editorEraserBtn = document.getElementById('editor-eraser-btn');
 
                 const stored = localStorage.getItem('padApp_data');
                 if (stored) {
@@ -390,7 +471,8 @@
                 console.log("✅ Application initialisée avec succès");
             },
 
-            saveData: function() {                localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));
+            saveData: function() {
+                localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));
             },
 
             navigate: function(viewId) {
@@ -398,14 +480,15 @@
                 document.getElementById(viewId).classList.add('active');
                 
                 this.elements.colorPopup.classList.remove('active');
+                this.elements.editorColorPopup.classList.remove('active');
 
                 if (viewId === 'view-list-manager') this.renderListManager();
                 if (viewId === 'view-list-selector-perf') this.renderPerfSelector();
                 if (viewId === 'view-performance') this.setupPerformanceMode();
+                if (viewId === 'view-draw-editor') this.setupEditorMode();
                 
                 console.log("📍 Navigation vers:", viewId);
             },
-
             renderListManager: function() {
                 const container = document.getElementById('manager-list-container');
                 container.innerHTML = '';
@@ -439,7 +522,8 @@
                     btn.innerText = `Zone ${i + 1}`;
                     btn.onclick = () => {
                         this.state.currentZoneIndex = i;
-                        this.prepareEditor(`Zone ${i + 1}`);                        this.navigate('view-draw-editor');
+                        this.prepareEditor(`Zone ${i + 1}`);
+                        this.navigate('view-draw-editor');
                     };
                     container.appendChild(btn);
                 }
@@ -453,8 +537,7 @@
                 if (confirm("Supprimer cette liste ?")) {
                     this.data.lists = this.data.lists.filter(l => l.id !== this.state.currentListId);
                     this.saveData();
-                    this.navigate('view-list-manager');
-                }
+                    this.navigate('view-list-manager');                }
             },
 
             renameCurrentList: function() {
@@ -481,6 +564,12 @@
                 });
             },
 
+            setupEditorMode: function() {
+                this.state.editorEraserMode = false;
+                this.elements.editorEraserBtn.classList.remove('active');
+                this.elements.editorColorPopup.classList.remove('active');
+            },
+
             prepareEditor: function(title) {
                 document.getElementById('editor-title').innerText = title;
                 const ctx = this.elements.editorCtx;
@@ -488,21 +577,37 @@
                 
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[this.state.currentZoneIndex]) {
-                    const img = new Image();                    img.onload = () => ctx.drawImage(img, 0, 0);
+                    const img = new Image();
+                    img.onload = () => ctx.drawImage(img, 0, 0);
                     img.src = list.zones[this.state.currentZoneIndex];
                 }
                 
                 this.setupDrawingMode(this.elements.editorCanvas, this.elements.editorCtx, false);
             },
 
-            setEditorColor: function(color, btn) {
-                this.state.color = color;
-                document.querySelectorAll('.editor-toolbar .color-btn').forEach(b => {
-                    b.style.borderColor = '#ccc';
-                    b.style.transform = 'none';
-                });
-                btn.style.borderColor = '#000';
-                btn.style.transform = 'scale(1.2)';
+            toggleEditorColorPopup: function() {
+                this.elements.editorColorPopup.classList.toggle('active');            },
+
+            selectEditorColor: function(color, btn) {
+                this.state.editorColor = color;
+                this.elements.editorCurrentColorIndicator.style.background = color;
+                
+                document.querySelectorAll('#editor-color-popup .color-option').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                
+                this.elements.editorColorPopup.classList.remove('active');
+                
+                this.state.editorEraserMode = false;
+                this.elements.editorEraserBtn.classList.remove('active');
+            },
+
+            toggleEditorEraser: function() {
+                this.state.editorEraserMode = !this.state.editorEraserMode;
+                this.elements.editorEraserBtn.classList.toggle('active');
+                
+                if (this.state.editorEraserMode) {
+                    this.elements.editorColorPopup.classList.remove('active');
+                }
             },
 
             saveZoneDrawing: function() {
@@ -522,8 +627,6 @@
                 this.state.strokes = [];
                 this.state.zoneImageLoaded = false;
                 
-                this.elements.modeIndicator.innerText = "Mode: DESSIN";
-                this.elements.modeIndicator.style.background = "#eee";
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
                 this.elements.eraserBtn.classList.remove('active');
@@ -532,12 +635,12 @@
                 this.setupDrawingMode(this.elements.perfCanvas, this.elements.perfCtx, true);
             },
 
-            initZoneOverlay: function() {
-                this.elements.perfOverlay.innerHTML = '';
+            initZoneOverlay: function() {                this.elements.perfOverlay.innerHTML = '';
                 for (let i = 0; i < 8; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'zone-cell';
-                                        cell.addEventListener('touchstart', (e) => {
+                    
+                    cell.addEventListener('touchstart', (e) => {
                         if (this.state.isZoneMode) {
                             e.preventDefault();
                             e.stopPropagation();
@@ -564,34 +667,29 @@
                     const img = new Image();
                     img.onload = () => {
                         ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
-                        this.state.strokes = []; // Clear temporary strokes
-                        this.state.zoneImageLoaded = true; // Marque qu'une image de zone est affichée
+                        this.state.strokes = [];
+                        this.state.zoneImageLoaded = true;
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
                     img.src = list.zones[index];
                 }
                 
-                // CORRECTION: Désactiver le mode zone automatiquement après affichage
                 this.deactivateZoneMode();
             },
 
             activateZoneMode: function() {
                 this.state.isZoneMode = true;
-                this.elements.modeIndicator.innerText = "Mode: ZONES";
-                this.elements.modeIndicator.style.background = "#ffcccc";
                 this.elements.perfOverlay.classList.add('active');
                 this.elements.perfCanvas.style.pointerEvents = 'none';
 
-                document.body.classList.add('flash-border');
-                setTimeout(() => {
-                    document.body.classList.remove('flash-border');
-                }, 1000);
+                // Effet visuel sur le bouton gomme (0.5s)
+                this.elements.eraserBtn.classList.add('flash');
+                setTimeout(() => {                    this.elements.eraserBtn.classList.remove('flash');
+                }, 500);
             },
-            // NOUVELLE FONCTION: Désactiver le mode zone
+
             deactivateZoneMode: function() {
                 this.state.isZoneMode = false;
-                this.elements.modeIndicator.innerText = "Mode: DESSIN";
-                this.elements.modeIndicator.style.background = "#eee";
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
             },
@@ -692,7 +790,10 @@
                     startX = coords.x;
                     startY = coords.y;
                     
-                    if (this.state.isEraserMode && isPerformance) {
+                    const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    const currentColor = isPerformance ? this.state.color : this.state.editorColor;
+                    
+                    if (currentEraserMode) {
                         for (let i = this.state.strokes.length - 1; i >= 0; i--) {
                             if (isPointNearStroke(coords, this.state.strokes[i])) {
                                 this.state.strokes.splice(i, 1);
@@ -706,7 +807,7 @@
                     }
                     
                     currentStroke = {
-                        color: this.state.color,
+                        color: currentColor,
                         points: [coords]
                     };
                     
@@ -714,7 +815,7 @@
                     ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.strokeStyle = this.state.color;
+                    ctx.strokeStyle = currentColor;
                     
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
@@ -730,10 +831,10 @@
                     e.preventDefault();
                     
                     const coords = getCoords(e);
-                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
-                    if (dist > 10) {
+                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));                    if (dist > 10) {
                         hasMoved = true;
-                        if (pressTimer) {                            clearTimeout(pressTimer);
+                        if (pressTimer) {
+                            clearTimeout(pressTimer);
                             pressTimer = null;
                         }
                     }
@@ -770,11 +871,6 @@
             redrawAllStrokes: function(ctx) {
                 ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                 
-                // Si une image de zone est chargée, la redessiner d'abord
-                if (this.state.zoneImageLoaded && this.state.currentListId) {
-                    // L'image est déjà dans le canvas, on dessine juste les strokes par dessus
-                }
-                
                 this.state.strokes.forEach(stroke => {
                     if (stroke.points.length < 2) return;
                     
@@ -782,9 +878,9 @@
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.strokeStyle = stroke.color;                    
-                    for (let i = 1; i < stroke.points.length; i++) {
-                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                    ctx.strokeStyle = stroke.color;
+                    
+                    for (let i = 1; i < stroke.points.length; i++) {                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     }
                     ctx.stroke();
                 });
