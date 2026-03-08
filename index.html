@@ -395,7 +395,7 @@
 
     <script>
         const app = {
-            data: { lists: [] },
+             { lists: [] },
             state: {
                 currentListId: null,
                 currentZoneIndex: null,
@@ -677,14 +677,15 @@
                 let startX = 0, startY = 0;
                 let hasMoved = false;
                 let currentStroke = null;
+                let lastPoint = null;
 
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
                         return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
                     }
-                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                };
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };                };
+
                 const isPointNearStroke = (point, stroke, threshold = 20) => {
                     for (let i = 0; i < stroke.points.length - 1; i++) {
                         const p1 = stroke.points[i];
@@ -719,6 +720,7 @@
                     const coords = getCoords(e);
                     startX = coords.x;
                     startY = coords.y;
+                    lastPoint = coords;
                     
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     const color = isPerformance ? this.state.color : this.state.editorColor;
@@ -731,9 +733,9 @@
                     currentStroke = { color: color, points: [coords] };
                     ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
-                    ctx.lineWidth = 5;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 5;                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = color;
                     
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
@@ -754,8 +756,19 @@
                         if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     }
                     currentStroke.points.push(coords);
+                    
+                    // AMÉLIORATION: Lissage avec courbes quadratiques
+                    if (lastPoint && currentStroke.points.length > 2) {
+                        const midPoint = {
+                            x: (lastPoint.x + coords.x) / 2,
+                            y: (lastPoint.y + coords.y) / 2
+                        };
+                        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, midPoint.x, midPoint.y);
+                    }
                     ctx.lineTo(coords.x, coords.y);
                     ctx.stroke();
+                    
+                    lastPoint = coords;
                 };
 
                 const endDraw = () => {
@@ -764,32 +777,31 @@
                     }
                     isDrawing = false;
                     currentStroke = null;
+                    lastPoint = null;
                     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
                     ctx.beginPath();
                 };
 
-                const eraseMove = (e) => {
-                    if (!isDrawing) return;
+                const eraseMove = (e) => {                    if (!isDrawing) return;
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     if (!eraserMode) return;
                     e.preventDefault();
                     eraseAtPoint(getCoords(e));
                 };
 
-                // Souris
                 canvas.addEventListener('mousedown', (e) => {
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     startDraw(e);
                     if (eraserMode) isDrawing = true;
                 });
-                canvas.addEventListener('mousemove', (e) => {                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                canvas.addEventListener('mousemove', (e) => {
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     if (eraserMode) eraseMove(e);
                     else draw(e);
                 });
                 canvas.addEventListener('mouseup', endDraw);
                 canvas.addEventListener('mouseleave', endDraw);
 
-                // Tactile
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
                 canvas.addEventListener('touchmove', (e) => {
                     const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
@@ -819,18 +831,28 @@
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.strokeStyle = stroke.color;
+                    ctx.lineJoin = 'round';                    ctx.strokeStyle = stroke.color;
                     for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     ctx.stroke();
                 });
             },
 
+            // AMÉLIORATION: Canvas haute résolution sans casser le dessin
             resizeCanvas: function(canvas) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
             }
         };
+
         window.onload = function() { app.init(); };
     </script>
 </body>
