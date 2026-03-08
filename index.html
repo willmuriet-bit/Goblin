@@ -110,7 +110,6 @@
             transition: border 0.1s;
         }
 
-        /* Toolbar pour PERFORMANCE */
         .toolbar {
             position: absolute;
             bottom: 30px;
@@ -126,7 +125,6 @@
             align-items: center;
         }
 
-        /* Toolbar pour ÉDITEUR DE ZONES */
         .editor-toolbar {
             position: absolute;
             bottom: 30px;
@@ -142,13 +140,12 @@
             align-items: center;
         }
 
-        /* Bouton couleur rond */
         .color-picker-btn {
             width: 50px;
-            height: 50px;            border-radius: 50%;
+            height: 50px;
+            border-radius: 50%;
             border: 3px solid #333;
-            cursor: pointer;
-            position: relative;
+            cursor: pointer;            position: relative;
             background: white;
             display: flex;
             align-items: center;
@@ -162,7 +159,6 @@
             background: black;
         }
 
-        /* Popup de couleurs */
         .color-popup {
             position: absolute;
             bottom: 90px;
@@ -195,11 +191,10 @@
             border-width: 3px;
             transform: scale(1.1);
         }
-        /* Bouton gomme - CERCLE GRIS AVEC RAYURES */
+
         .eraser-btn {
             width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            height: 50px;            border-radius: 50%;
             border: 3px solid #333;
             cursor: pointer;
             background: #cccccc;
@@ -240,17 +235,15 @@
             );
         }
 
-        /* Effet visuel quand mode zone activé (0.5s) */
         .eraser-btn.flash {
             animation: eraserFlash 0.5s ease-out;
         }
+
         @keyframes eraserFlash {
             0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
             50% { transform: scale(1.2); box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.4); }
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
         }
-
-        /* Bouton sauvegarder */
         .save-btn {
             width: 50px;
             height: 50px;
@@ -269,7 +262,6 @@
             color: white;
         }
 
-        /* Bouton retour */
         .back-btn {
             width: 50px;
             height: 50px;
@@ -292,27 +284,26 @@
             display: flex;
             flex-direction: column;
             width: 80%;
-            max-width: 400px;            max-height: 80vh;
+            max-width: 400px;
+            max-height: 80vh;
             overflow-y: auto;
             z-index: 100;
         }
 
-        /* CORRECTION: Grille des zones ajustée pour ne pas déborder */
         .zone-editor-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr;            gap: 10px;
             width: 90%;
-            max-width: 500px; /* Réduit pour éviter le débordement */
+            max-width: 500px;
             z-index: 100;
             padding: 10px;
         }
 
         .zone-editor-grid button {
-            min-width: auto; /* Enlève la largeur minimale */
-            width: 100%; /* Prend toute la largeur de sa cellule */
-            padding: 20px 10px; /* Padding réduit */
-            font-size: 1rem; /* Police plus petite */
+            min-width: auto;
+            width: 100%;
+            padding: 20px 10px;
+            font-size: 1rem;
         }
 
         .list-title-container {
@@ -341,7 +332,8 @@
     <div id="view-list-manager" class="view">
         <h2>Mes Listes</h2>
         <div class="list-grid" id="manager-list-container"></div>
-        <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>        <button class="small" onclick="app.navigate('view-home')">Retour</button>
+        <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>
+        <button class="small" onclick="app.navigate('view-home')">Retour</button>
     </div>
 
     <!-- VUE 3: DÉTAIL D'UNE LISTE -->
@@ -349,8 +341,7 @@
         <div class="list-title-container">
             <button class="back-btn" onclick="app.navigate('view-list-manager')">⬅️</button>
             <h2 id="detail-list-title">Liste X</h2>
-            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>
-        </div>
+            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>        </div>
         <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
         <div class="zone-editor-grid" id="detail-zone-container"></div>
         <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
@@ -365,21 +356,13 @@
 
     <!-- VUE 5: ÉDITEUR DE DESSIN (Zones) -->
     <div id="view-draw-editor" class="view">
-        <h3 id="editor-title">Dessin Zone X</h3>
         <canvas id="editor-canvas"></canvas>
         <div class="editor-toolbar">
-            <!-- Bouton retour -->
             <div class="back-btn" onclick="app.navigate('view-list-detail')">⬅️</div>
-            
-            <!-- Bouton gomme -->
             <div class="eraser-btn" id="editor-eraser-btn" onclick="app.toggleEditorEraser()"></div>
-            
-            <!-- Sélecteur de couleur -->
             <div class="color-picker-btn" onclick="app.toggleEditorColorPopup()">
                 <div class="inner-circle" id="editor-current-color-indicator"></div>
             </div>
-            
-            <!-- Popup de couleurs -->
             <div class="color-popup" id="editor-color-popup">
                 <div class="color-option selected" style="background:black" onclick="app.selectEditorColor('black', this)"></div>
                 <div class="color-option" style="background:red" onclick="app.selectEditorColor('red', this)"></div>
@@ -390,7 +373,6 @@
                 <div class="color-option" style="background:pink" onclick="app.selectEditorColor('pink', this)"></div>
                 <div class="color-option" style="background:brown" onclick="app.selectEditorColor('brown', this)"></div>
             </div>
-                        <!-- Bouton sauvegarder -->
             <div class="save-btn" onclick="app.saveZoneDrawing()">💾</div>
         </div>
     </div>
@@ -401,20 +383,14 @@
         <div class="zone-overlay" id="perf-zone-overlay"></div>
         
         <div class="toolbar">
-            <!-- BOUTON GOMME (à gauche) -->
             <div class="eraser-btn" id="eraser-btn" onclick="app.toggleEraser()"></div>
-            
-            <!-- SÉLECTEUR DE COULEUR (à droite) -->
             <div class="color-picker-btn" onclick="app.toggleColorPopup()">
                 <div class="inner-circle" id="current-color-indicator"></div>
             </div>
-            
-            <!-- Popup de couleurs -->
             <div class="color-popup" id="color-popup">
                 <div class="color-option selected" style="background:black" onclick="app.selectColor('black', this)"></div>
                 <div class="color-option" style="background:red" onclick="app.selectColor('red', this)"></div>
-                <div class="color-option" style="background:blue" onclick="app.selectColor('blue', this)"></div>
-                <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
+                <div class="color-option" style="background:blue" onclick="app.selectColor('blue', this)"></div>                <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
                 <div class="color-option" style="background:orange" onclick="app.selectColor('orange', this)"></div>
                 <div class="color-option" style="background:purple" onclick="app.selectColor('purple', this)"></div>
                 <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>
@@ -436,9 +412,11 @@
                 isEraserMode: false,
                 editorEraserMode: false,
                 strokes: [],
-                zoneImageLoaded: false
+                zoneImageLoaded: false,
+                eraserSegments: [] // Pour la gomme intelligente sur image
             },
             elements: {},
+
             init: function() {
                 this.elements.perfCanvas = document.getElementById('perf-canvas');
                 this.elements.editorCanvas = document.getElementById('editor-canvas');
@@ -446,8 +424,6 @@
                 this.elements.colorPopup = document.getElementById('color-popup');
                 this.elements.currentColorIndicator = document.getElementById('current-color-indicator');
                 this.elements.eraserBtn = document.getElementById('eraser-btn');
-                
-                // Éléments pour l'éditeur
                 this.elements.editorColorPopup = document.getElementById('editor-color-popup');
                 this.elements.editorCurrentColorIndicator = document.getElementById('editor-current-color-indicator');
                 this.elements.editorEraserBtn = document.getElementById('editor-eraser-btn');
@@ -464,7 +440,6 @@
                 this.resizeCanvas(this.elements.editorCanvas);
                 this.elements.perfCtx = this.elements.perfCanvas.getContext('2d');
                 this.elements.editorCtx = this.elements.editorCanvas.getContext('2d');
-
                 this.initZoneOverlay();
                 this.renderListManager();
                 
@@ -489,6 +464,7 @@
                 
                 console.log("📍 Navigation vers:", viewId);
             },
+
             renderListManager: function() {
                 const container = document.getElementById('manager-list-container');
                 container.innerHTML = '';
@@ -512,8 +488,7 @@
             },
 
             renderListDetail: function() {
-                const list = this.data.lists.find(l => l.id === this.state.currentListId);
-                document.getElementById('detail-list-title').innerText = list.name;
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);                document.getElementById('detail-list-title').innerText = list.name;
                 const container = document.getElementById('detail-zone-container');
                 container.innerHTML = '';
                 
@@ -529,15 +504,18 @@
                 }
             },
 
+            // CORRECTION 1: Message de confirmation pour supprimer
             deleteCurrentList: function() {
                 if (this.data.lists.length <= 1) {
                     alert("Impossible de supprimer la dernière liste !");
                     return;
                 }
-                if (confirm("Supprimer cette liste ?")) {
+                const confirmed = confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette liste ?\n\nTous les dessins associés seront perdus définitivement.\n\nValider pour supprimer, Annuler pour garder.");
+                if (confirmed) {
                     this.data.lists = this.data.lists.filter(l => l.id !== this.state.currentListId);
                     this.saveData();
-                    this.navigate('view-list-manager');                }
+                    this.navigate('view-list-manager');
+                }
             },
 
             renameCurrentList: function() {
@@ -559,8 +537,7 @@
                     btn.onclick = () => {
                         this.state.currentListId = list.id;
                         this.navigate('view-performance');
-                    };
-                    container.appendChild(btn);
+                    };                    container.appendChild(btn);
                 });
             },
 
@@ -571,7 +548,6 @@
             },
 
             prepareEditor: function(title) {
-                document.getElementById('editor-title').innerText = title;
                 const ctx = this.elements.editorCtx;
                 ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
                 
@@ -586,7 +562,8 @@
             },
 
             toggleEditorColorPopup: function() {
-                this.elements.editorColorPopup.classList.toggle('active');            },
+                this.elements.editorColorPopup.classList.toggle('active');
+            },
 
             selectEditorColor: function(color, btn) {
                 this.state.editorColor = color;
@@ -609,7 +586,6 @@
                     this.elements.editorColorPopup.classList.remove('active');
                 }
             },
-
             saveZoneDrawing: function() {
                 const dataURL = this.elements.editorCanvas.toDataURL();
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
@@ -626,6 +602,7 @@
                 this.state.isEraserMode = false;
                 this.state.strokes = [];
                 this.state.zoneImageLoaded = false;
+                this.state.eraserSegments = [];
                 
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
@@ -635,7 +612,8 @@
                 this.setupDrawingMode(this.elements.perfCanvas, this.elements.perfCtx, true);
             },
 
-            initZoneOverlay: function() {                this.elements.perfOverlay.innerHTML = '';
+            initZoneOverlay: function() {
+                this.elements.perfOverlay.innerHTML = '';
                 for (let i = 0; i < 8; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'zone-cell';
@@ -657,8 +635,7 @@
                     });
                     
                     this.elements.perfOverlay.appendChild(cell);
-                }
-            },
+                }            },
 
             loadZoneImage: function(index) {
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
@@ -668,6 +645,7 @@
                     img.onload = () => {
                         ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                         this.state.strokes = [];
+                        this.state.eraserSegments = []; // Reset segments pour gomme intelligente
                         this.state.zoneImageLoaded = true;
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
@@ -682,9 +660,9 @@
                 this.elements.perfOverlay.classList.add('active');
                 this.elements.perfCanvas.style.pointerEvents = 'none';
 
-                // Effet visuel sur le bouton gomme (0.5s)
                 this.elements.eraserBtn.classList.add('flash');
-                setTimeout(() => {                    this.elements.eraserBtn.classList.remove('flash');
+                setTimeout(() => {
+                    this.elements.eraserBtn.classList.remove('flash');
                 }, 500);
             },
 
@@ -706,8 +684,7 @@
                 btn.classList.add('selected');
                 
                 this.elements.colorPopup.classList.remove('active');
-                
-                this.state.isEraserMode = false;
+                                this.state.isEraserMode = false;
                 this.elements.eraserBtn.classList.remove('active');
             },
 
@@ -720,6 +697,7 @@
                 }
             },
 
+            // CORRECTION 4: Qualité de dessin améliorée
             setupDrawingMode: function(canvas, ctx, isPerformance = false) {
                 let isDrawing = false;
                 let pressTimer = null;
@@ -727,13 +705,15 @@
                 let startY = 0;
                 let hasMoved = false;
                 let currentStroke = null;
+                let lastPoint = null;
 
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
                         return {
                             x: e.touches[0].clientX - rect.left,
-                            y: e.touches[0].clientY - rect.top                        };
+                            y: e.touches[0].clientY - rect.top
+                        };
                     }
                     return {
                         x: e.clientX - rect.left,
@@ -741,7 +721,7 @@
                     };
                 };
 
-                const isPointNearStroke = (point, stroke, threshold = 15) => {
+                const isPointNearStroke = (point, stroke, threshold = 20) => {
                     for (let i = 0; i < stroke.points.length - 1; i++) {
                         const p1 = stroke.points[i];
                         const p2 = stroke.points[i + 1];
@@ -750,6 +730,30 @@
                             return true;
                         }
                     }
+                    return false;
+                };
+
+                // CORRECTION 2: Gomme intelligente qui efface trait par trait                const eraseAtPoint = (point) => {
+                    // D'abord vérifier les strokes dessinés
+                    for (let i = this.state.strokes.length - 1; i >= 0; i--) {
+                        if (isPointNearStroke(point, this.state.strokes[i])) {
+                            this.state.strokes.splice(i, 1);
+                            this.redrawAllStrokes(ctx);
+                            return true;
+                        }
+                    }
+                    
+                    // Si une image de zone est chargée, utiliser la gomme pixel par pixel
+                    if (this.state.zoneImageLoaded && isPerformance) {
+                        const eraseRadius = 20;
+                        ctx.globalCompositeOperation = 'destination-out';
+                        ctx.beginPath();
+                        ctx.arc(point.x, point.y, eraseRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.globalCompositeOperation = 'source-over';
+                        return true;
+                    }
+                    
                     return false;
                 };
 
@@ -778,10 +782,10 @@
                         yy = y1 + param * D;
                     }
 
-                    const dx = px - xx;
-                    const dy = py - yy;
+                    const dx = px - xx;                    const dy = py - yy;
                     return Math.sqrt(dx * dx + dy * dy);
                 };
+
                 const startDraw = (e) => {
                     e.preventDefault();
                     isDrawing = true;
@@ -789,19 +793,14 @@
                     const coords = getCoords(e);
                     startX = coords.x;
                     startY = coords.y;
+                    lastPoint = coords;
                     
                     const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     const currentColor = isPerformance ? this.state.color : this.state.editorColor;
                     
+                    // CORRECTION 2: La gomme fonctionne immédiatement
                     if (currentEraserMode) {
-                        for (let i = this.state.strokes.length - 1; i >= 0; i--) {
-                            if (isPointNearStroke(coords, this.state.strokes[i])) {
-                                this.state.strokes.splice(i, 1);
-                                this.redrawAllStrokes(ctx);
-                                isDrawing = false;
-                                return;
-                            }
-                        }
+                        eraseAtPoint(coords);
                         isDrawing = false;
                         return;
                     }
@@ -813,8 +812,10 @@
                     
                     ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
+                    // CORRECTION 4: Meilleure qualité de ligne
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
                     ctx.strokeStyle = currentColor;
                     
                     if (isPerformance) {
@@ -830,8 +831,8 @@
                     if (!isDrawing || !currentStroke) return;
                     e.preventDefault();
                     
-                    const coords = getCoords(e);
-                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));                    if (dist > 10) {
+                    const coords = getCoords(e);                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
+                    if (dist > 10) {
                         hasMoved = true;
                         if (pressTimer) {
                             clearTimeout(pressTimer);
@@ -840,8 +841,19 @@
                     }
 
                     currentStroke.points.push(coords);
+                    
+                    // CORRECTION 4: Lissage des traits avec courbes quadratiques
+                    if (lastPoint && currentStroke.points.length > 2) {
+                        const midPoint = {
+                            x: (lastPoint.x + coords.x) / 2,
+                            y: (lastPoint.y + coords.y) / 2
+                        };
+                        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, midPoint.x, midPoint.y);
+                    }
                     ctx.lineTo(coords.x, coords.y);
                     ctx.stroke();
+                    
+                    lastPoint = coords;
                 };
 
                 const endDraw = (e) => {
@@ -850,6 +862,7 @@
                     }
                     isDrawing = false;
                     currentStroke = null;
+                    lastPoint = null;
                     if (pressTimer) {
                         clearTimeout(pressTimer);
                         pressTimer = null;
@@ -857,10 +870,26 @@
                     ctx.beginPath();
                 };
 
+                // Mode gomme pour dessin continu
+                const eraseMove = (e) => {
+                    if (!isDrawing || !this.state.isEraserMode) return;
+                    e.preventDefault();
+                    const coords = getCoords(e);
+                    eraseAtPoint(coords);
+                };
+
                 canvas.addEventListener('mousedown', startDraw);
                 canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('mouseup', endDraw);
-                canvas.addEventListener('mouseleave', endDraw);
+                canvas.addEventListener('mouseup', endDraw);                canvas.addEventListener('mouseleave', endDraw);
+                
+                // Événements pour la gomme continue
+                canvas.addEventListener('mousedown', (e) => {
+                    if (this.state.isEraserMode) {
+                        isDrawing = true;
+                    }
+                });
+                canvas.addEventListener('mousemove', eraseMove);
+                canvas.addEventListener('mouseup', () => { isDrawing = false; });
 
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
                 canvas.addEventListener('touchmove', draw, { passive: false });
@@ -878,18 +907,29 @@
                     ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
                     ctx.strokeStyle = stroke.color;
                     
-                    for (let i = 1; i < stroke.points.length; i++) {                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                    for (let i = 1; i < stroke.points.length; i++) {
+                        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
                     }
                     ctx.stroke();
                 });
             },
 
+            // CORRECTION 4: Canvas haute résolution
             resizeCanvas: function(canvas) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            },
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';            },
             
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
