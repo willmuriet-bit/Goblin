@@ -2,19 +2,20 @@
   "name": "Pad Interactif Pro",
   "short_name": "PadPro",
   "description": "Application de dessin interactif",
-  "start_url": "/",
+  "start_url": "./index.html",  // ← CHANGE "/" PAR "./index.html"
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#333333",
   "orientation": "portrait",
+  "scope": "./",
   "icons": [
     {
-      "src": "app-192.png",
+      "src": "./app-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "app-512.png",
+      "src": "./app-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
