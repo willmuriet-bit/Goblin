@@ -10,7 +10,7 @@
             --primary: #333;
             --accent: #007bff;
             --bg: #ffffff;
-            --border-flash: #ff0000; /* Couleur de la bordure lors de l'activation */
+            --border-flash: #ff0000;
         }
 
         body, html {
@@ -20,14 +20,14 @@
             height: 100%;
             background-color: var(--bg);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Empêche le scroll */
-            user-select: none; /* Empêche la sélection de texte */
+            overflow: hidden;
+            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
         /* --- GESTION DES VUES --- */
         .view {
-            display: none; /* Caché par défaut */
+            display: none;
             width: 100vw;
             height: 100vh;
             flex-direction: column;
@@ -70,12 +70,12 @@
 
         /* --- CANVAS --- */
         canvas {
-            touch-action: none; /* Important pour le dessin tactile */
+            touch-action: none;
             cursor: crosshair;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* --- GRILLE DES ZONES (INVISIBLE MAIS ACTIVE) --- */
+        /* --- GRILLE DES ZONES (INVISIBLE) --- */
         .zone-overlay {
             position: absolute;
             top: 0;
@@ -83,33 +83,31 @@
             width: 100%;
             height: 100%;
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 vertical */
-            grid-template-rows: 1fr 1fr 1fr 1fr; /* 4 horizontal */
-            pointer-events: none; /* Désactivé par défaut */
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            pointer-events: none;
             z-index: 20;
         }
 
         .zone-cell {
-            /* border: 1px solid rgba(0,0,0,0.1);  Décommenter pour voir les zones */
+            /* border: 1px solid rgba(0,0,0,0.1); Décommenter pour voir les zones */
         }
 
-        /* Quand le mode zone est actif, on permet le clic sur la grille */
         .zone-overlay.active {
             pointer-events: auto;
-        }        
-        /* Optionnel : léger survol pour indiquer la zone active */
-        .zone-cell:hover {
+        }
+                .zone-cell:hover {
             background-color: rgba(0,0,0,0.05);
         }
 
-        /* --- EFFET BORDURE (700ms trigger) --- */
+        /* --- EFFET BORDURE --- */
         body.flash-border {
             border: 10px solid var(--border-flash);
             box-sizing: border-box;
             transition: border 0.1s;
         }
 
-        /* --- OUTILS DE DESSIN (BARRE FLOTTANTE) --- */
+        /* --- OUTILS DE DESSIN --- */
         .toolbar {
             position: absolute;
             bottom: 20px;
@@ -122,6 +120,8 @@
             display: flex;
             gap: 10px;
             z-index: 50;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .color-btn {
@@ -147,7 +147,7 @@
             font-size: 0.8rem;
             z-index: 60;        }
 
-        /* --- LISTE DES LISTES (GRID) --- */
+        /* --- LISTE DES LISTES --- */
         .list-grid {
             display: flex;
             flex-direction: column;
@@ -189,7 +189,7 @@
         <button class="small" onclick="app.navigate('view-home')">Retour</button>
     </div>
 
-    <!-- VUE 3: DÉTAIL D'UNE LISTE (ÉDITION DES ZONES) -->
+    <!-- VUE 3: DÉTAIL D'UNE LISTE -->
     <div id="view-list-detail" class="view">
         <h2 id="detail-list-title">Liste X</h2>
         <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
@@ -207,7 +207,7 @@
         <button class="small" onclick="app.navigate('view-home')">Annuler</button>
     </div>
 
-    <!-- VUE 5: ÉDITEUR DE DESSIN (POUR CRÉER LES ZONES) -->
+    <!-- VUE 5: ÉDITEUR DE DESSIN -->
     <div id="view-draw-editor" class="view">
         <h3 id="editor-title">Dessin Zone X</h3>
         <canvas id="editor-canvas"></canvas>
@@ -221,10 +221,9 @@
         </div>
     </div>
 
-    <!-- VUE 6: PERFORMANCE (CANVAS PRINCIPAL) -->
+    <!-- VUE 6: PERFORMANCE -->
     <div id="view-performance" class="view">
         <canvas id="perf-canvas"></canvas>
-        <!-- Grille invisible pour les zones -->
         <div class="zone-overlay" id="perf-zone-overlay">
             <!-- Généré par JS -->
         </div>
@@ -243,16 +242,16 @@
 
     <script>
         /**
-         * LOGIQUE DE L'APPLICATION         */
-        const app = {
+         * LOGIQUE DE L'APPLICATION
+         */        const app = {
             data: {
-                lists: [] // Structure: { id, name, zones: [base64, base64...] }
+                lists: []
             },
             state: {
                 currentView: 'view-home',
                 currentListId: null,
-                currentZoneIndex: null, // 0 à 7
-                isZoneMode: false, // False = Dessin libre, True = Mode Zones
+                currentZoneIndex: null,
+                isZoneMode: false,
                 color: 'black',
                 isDrawing: false,
                 longPressTimer: null,
@@ -274,7 +273,6 @@
                 if (stored) {
                     this.data.lists = JSON.parse(stored);
                 } else {
-                    // Créer une liste par défaut
                     this.data.lists = [{ id: Date.now(), name: "Liste 1", zones: Array(8).fill(null) }];
                     this.saveData();
                 }
@@ -292,10 +290,9 @@
                 window.addEventListener('resize', () => {
                     this.resizeCanvas(this.elements.perfCanvas);
                     this.resizeCanvas(this.elements.editorCanvas);
-                    this.redrawCurrentCanvas();                });
+                });
 
-                this.renderListManager();
-            },
+                this.renderListManager();            },
 
             saveData: function() {
                 localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));
@@ -341,10 +338,10 @@
                 const container = document.getElementById('detail-zone-container');
                 container.innerHTML = '';
                 
-                for (let i = 0; i < 8; i++) {                    const btn = document.createElement('button');
+                for (let i = 0; i < 8; i++) {
+                    const btn = document.createElement('button');
                     btn.innerText = `Zone ${i + 1}`;
-                    btn.onclick = () => {
-                        this.state.currentZoneIndex = i;
+                    btn.onclick = () => {                        this.state.currentZoneIndex = i;
                         this.prepareEditor(`Zone ${i + 1}`);
                         this.navigate('view-draw-editor');
                     };
@@ -376,13 +373,12 @@
                 });
             },
 
-            // --- ÉDITEUR DE DESSIN (POUR LISTES) ---
+            // --- ÉDITEUR DE DESSIN ---
             prepareEditor: function(title) {
                 document.getElementById('editor-title').innerText = title;
                 const ctx = this.elements.editorCtx;
                 ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
                 
-                // Charger dessin existant si présent
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[this.state.currentZoneIndex]) {
                     const img = new Image();
@@ -390,11 +386,11 @@
                     img.src = list.zones[this.state.currentZoneIndex];
                 }
                 
-                this.setupCanvasListeners(this.elements.editorCanvas, 'editor');            },
+                this.setupCanvasListeners(this.elements.editorCanvas, 'editor');
+            },
 
             saveZoneDrawing: function() {
-                const dataURL = this.elements.editorCanvas.toDataURL();
-                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                const dataURL = this.elements.editorCanvas.toDataURL();                const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 list.zones[this.state.currentZoneIndex] = dataURL;
                 this.saveData();
                 this.navigate('view-list-detail');
@@ -415,20 +411,20 @@
                     const cell = document.createElement('div');
                     cell.className = 'zone-cell';
                     cell.dataset.index = i;
-                    // Clic sur une zone en mode Zone
+                    
                     cell.addEventListener('click', (e) => {
                         if (this.state.isZoneMode) {
                             this.loadZoneImage(i);
                         }
                     });
-                    // Support tactile pour le clic simple
+                    
                     cell.addEventListener('touchend', (e) => {
                         if (this.state.isZoneMode) {
-                            // Empêcher le zoom double tap
-                            // e.preventDefault(); 
+                            e.preventDefault();
                             this.loadZoneImage(i);
                         }
                     });
+                    
                     this.elements.perfOverlay.appendChild(cell);
                 }
             },
@@ -439,26 +435,23 @@
                     const ctx = this.elements.perfCtx;
                     const img = new Image();
                     img.onload = () => {
-                        ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);                        // Dessiner l'image pour qu'elle remplisse le canvas (contain/cover logic simple)
-                        // Ici on stretch pour remplir toute la zone comme un fond
+                        ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
                     img.src = list.zones[index];
-                }
-            },
+                }            },
 
             updateModeIndicator: function() {
                 this.state.isZoneMode = !this.state.isZoneMode;
                 this.elements.modeIndicator.innerText = this.state.isZoneMode ? "Mode: ZONES" : "Mode: DESSIN";
                 this.elements.modeIndicator.style.background = this.state.isZoneMode ? "#ffcccc" : "#eee";
                 
-                // Activer/Désactiver la grille de clic
                 if (this.state.isZoneMode) {
                     this.elements.perfOverlay.classList.add('active');
-                    this.elements.perfCanvas.style.pointerEvents = 'none'; // On ne dessine plus
+                    this.elements.perfCanvas.style.pointerEvents = 'none';
                 } else {
                     this.elements.perfOverlay.classList.remove('active');
-                    this.elements.perfCanvas.style.pointerEvents = 'auto'; // On dessine
+                    this.elements.perfCanvas.style.pointerEvents = 'auto';
                 }
 
                 // Effet Bordure (1 seconde)
@@ -483,12 +476,11 @@
                     ctx.beginPath();
                     ctx.moveTo(x, y);
                     
-                    // Lancer le timer pour le long press (700ms)
-                    // Seulement si on est en mode performance
                     if (type === 'perf') {
                         pressTimer = setTimeout(() => {
                             if (!hasMoved) {
-                                app.updateModeIndicator();                            }
+                                app.updateModeIndicator();
+                            }
                         }, 700);
                     }
                 };
@@ -496,13 +488,11 @@
                 const draw = (x, y) => {
                     if (!isDrawing) return;
                     
-                    // Si on a bougé de plus de 10px, ce n'est plus un long press valide
-                    const dist = Math.sqrt(Math.pow(x - startCoords.x, 2) + Math.pow(y - startCoords.y, 2));
-                    if (dist > 10) hasMoved = true;
+                    const dist = Math.sqrt(Math.pow(x - startCoords.x, 2) + Math.pow(y - startCoords.y, 2));                    if (dist > 10) hasMoved = true;
 
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
-                    ctx.strokeStyle = this.state.color;
+                    ctx.strokeStyle = app.state.color;
                     ctx.lineTo(x, y);
                     ctx.stroke();
                 };
@@ -510,7 +500,7 @@
                 const endDraw = () => {
                     isDrawing = false;
                     if (pressTimer) clearTimeout(pressTimer);
-                    ctx.beginPath(); // Reset path
+                    ctx.beginPath();
                 };
 
                 // Souris
@@ -521,7 +511,7 @@
 
                 // Tactile
                 canvas.addEventListener('touchstart', e => {
-                    e.preventDefault(); // Empêche scroll
+                    e.preventDefault();
                     const touch = e.touches[0];
                     const rect = canvas.getBoundingClientRect();
                     startDraw(touch.clientX - rect.left, touch.clientY - rect.top);
@@ -537,7 +527,8 @@
                 canvas.addEventListener('touchend', endDraw);
             },
 
-            // --- UTILITAIRES ---            resizeCanvas: function(canvas) {
+            // --- UTILITAIRES ---
+            resizeCanvas: function(canvas) {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
             },
@@ -547,18 +538,12 @@
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
                 btnElement.classList.add('selected');
             },
-
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
                     const ctx = type === 'perf' ? this.elements.perfCtx : this.elements.editorCtx;
                     const canvas = type === 'perf' ? this.elements.perfCanvas : this.elements.editorCanvas;
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                 }
-            },
-
-            redrawCurrentCanvas: function() {
-                // Pour redessiner le contenu si la fenêtre change de taille (simple clear ici pour MVP)
-                // Dans une version avancée, on stockerait les traits pour redessiner
             }
         };
 
