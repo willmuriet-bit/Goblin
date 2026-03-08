@@ -837,17 +837,8 @@
             },
 
             resizeCanvas: function(canvas) {
-                const dpr = window.devicePixelRatio || 1;
-                const rect = canvas.getBoundingClientRect();
-                
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.scale(dpr, dpr);
-                
-                canvas.style.width = rect.width + 'px';
-                canvas.style.height = rect.height + 'px';
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
         };
 
