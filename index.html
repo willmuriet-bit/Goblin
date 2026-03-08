@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pad Interactif Pro</title>
     <style>
-        /* --- STYLE GLOBAL --- */
         :root {
             --primary: #333;
-            --accent: #007bff;
             --bg: #ffffff;
             --border-flash: #ff0000;
             --danger: #dc3545;
@@ -24,10 +22,9 @@
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none; /* IMPORTANT pour le tactile */
+            touch-action: none;
         }
 
-        /* --- GESTION DES VUES --- */
         .view {
             display: none;
             width: 100vw;
@@ -46,18 +43,16 @@
             display: flex;
         }
 
-        /* --- BOUTONS --- */
-        button {            padding: 15px 30px;
+        button {
+            padding: 15px 30px;
             margin: 10px;
             font-size: 1.2rem;
-            border: 2px solid var(--primary);
-            background: white;
+            border: 2px solid var(--primary);            background: white;
             color: var(--primary);
             cursor: pointer;
             border-radius: 8px;
             min-width: 200px;
-            transition: all 0.2s;
-            z-index: 100; /* Boutons au-dessus de tout */
+            z-index: 100;
         }
 
         button:active {
@@ -81,7 +76,6 @@
             color: white;
         }
 
-        /* --- CANVAS --- */
         canvas {
             touch-action: none;
             cursor: crosshair;
@@ -91,35 +85,30 @@
             z-index: 5;
         }
 
-        /* --- GRILLE DES ZONES (INVISIBLE) --- */
         .zone-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;            height: 100%;
+            width: 100%;
+            height: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr 1fr;
-            pointer-events: none;
+            pointer-events: none; /* DÉSACTIVÉ PAR DÉFAUT */
             z-index: 20;
         }
-
-        .zone-cell {
-            /* Aucun effet visuel */
-        }
+        .zone-cell { }
 
         .zone-overlay.active {
-            pointer-events: auto;
+            pointer-events: auto; /* ACTIVÉ SEULEMENT APRÈS 700ms */
         }
 
-        /* --- EFFET BORDURE --- */
         body.flash-border {
             border: 10px solid var(--border-flash);
             box-sizing: border-box;
             transition: border 0.1s;
         }
 
-        /* --- OUTILS DE DESSIN --- */
         .toolbar {
             position: absolute;
             bottom: 20px;
@@ -145,9 +134,9 @@
         }
         .color-btn.selected {
             border-color: #000;
-            transform: scale(1.2);        }
+            transform: scale(1.2);
+        }
 
-        /* --- INDICATEUR DE MODE --- */
         #mode-indicator {
             position: absolute;
             top: 20px;
@@ -156,10 +145,8 @@
             background: #eee;
             border-radius: 4px;
             font-size: 0.8rem;
-            z-index: 100;
-        }
+            z-index: 100;        }
 
-        /* --- LISTE DES LISTES --- */
         .list-grid {
             display: flex;
             flex-direction: column;
@@ -178,12 +165,10 @@
             max-width: 600px;
             z-index: 100;
         }
-
     </style>
 </head>
 <body>
 
-    <!-- INDICATEUR DE MODE -->
     <div id="mode-indicator">Mode: DESSIN</div>
 
     <!-- VUE 1: ACCUEIL -->
@@ -194,7 +179,8 @@
     </div>
 
     <!-- VUE 2: GESTION DES LISTES -->
-    <div id="view-list-manager" class="view">        <h2>Mes Listes</h2>
+    <div id="view-list-manager" class="view">
+        <h2>Mes Listes</h2>
         <div class="list-grid" id="manager-list-container"></div>
         <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>
         <button class="small" onclick="app.navigate('view-home')">Retour</button>
@@ -208,8 +194,7 @@
         <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
         <button class="small" onclick="app.navigate('view-list-manager')">Retour aux listes</button>
     </div>
-
-    <!-- VUE 4: SÉLECTION DE LISTE POUR PERFORMANCE -->
+    <!-- VUE 4: SÉLECTION DE LISTE -->
     <div id="view-list-selector-perf" class="view">
         <h2>Choisir une liste pour Performer</h2>
         <div class="list-grid" id="perf-list-container"></div>
@@ -243,37 +228,27 @@
             <button class="small" onclick="app.navigate('view-home')">Quitter</button>
         </div>
         <div style="position:absolute; top:10px; left:10px; font-size:0.8rem; color:#888; z-index:100;">
-            Appui long (700ms) pour changer de mode        </div>
+            Appui long (700ms) pour activer les zones
+        </div>
     </div>
 
     <script>
         const app = {
             data: { lists: [] },
             state: {
-                currentView: 'view-home',
                 currentListId: null,
                 currentZoneIndex: null,
-                isZoneMode: false,
+                isZoneMode: false, // FALSE PAR DÉFAUT
                 color: 'black',
                 longPressTimer: null
             },
-            elements: {
-                perfCanvas: null,
-                perfCtx: null,
-                editorCanvas: null,
-                editorCtx: null,
-                perfOverlay: null,
-                modeIndicator: null
-            },
-
+            elements: {},
             init: function() {
-                // Récupération des éléments DOM
                 this.elements.perfCanvas = document.getElementById('perf-canvas');
                 this.elements.editorCanvas = document.getElementById('editor-canvas');
                 this.elements.perfOverlay = document.getElementById('perf-zone-overlay');
                 this.elements.modeIndicator = document.getElementById('mode-indicator');
 
-                // Charger les données
                 const stored = localStorage.getItem('padApp_data');
                 if (stored) {
                     this.data.lists = JSON.parse(stored);
@@ -282,22 +257,13 @@
                     this.saveData();
                 }
 
-                // Init Canvas
                 this.resizeCanvas(this.elements.perfCanvas);
                 this.resizeCanvas(this.elements.editorCanvas);
                 this.elements.perfCtx = this.elements.perfCanvas.getContext('2d');
                 this.elements.editorCtx = this.elements.editorCanvas.getContext('2d');
 
-                // Init Overlay Zones
                 this.initZoneOverlay();
-
-                // Resize listener
-                window.addEventListener('resize', () => {                    this.resizeCanvas(this.elements.perfCanvas);
-                    this.resizeCanvas(this.elements.editorCanvas);
-                });
-
                 this.renderListManager();
-                console.log("✅ Application initialisée");
             },
 
             saveData: function() {
@@ -307,8 +273,6 @@
             navigate: function(viewId) {
                 document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
                 document.getElementById(viewId).classList.add('active');
-                this.state.currentView = viewId;
-                console.log("📍 Navigation vers:", viewId);
 
                 if (viewId === 'view-list-manager') this.renderListManager();
                 if (viewId === 'view-list-selector-perf') this.renderPerfSelector();
@@ -329,7 +293,6 @@
                     container.appendChild(btn);
                 });
             },
-
             addNewList: function() {
                 const newId = Date.now();
                 this.data.lists.push({ id: newId, name: `Liste ${this.data.lists.length + 1}`, zones: Array(8).fill(null) });
@@ -341,7 +304,8 @@
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 document.getElementById('detail-list-title').innerText = list.name;
                 const container = document.getElementById('detail-zone-container');
-                container.innerHTML = '';                
+                container.innerHTML = '';
+                
                 for (let i = 0; i < 8; i++) {
                     const btn = document.createElement('button');
                     btn.innerText = `Zone ${i + 1}`;
@@ -377,8 +341,7 @@
             },
 
             renderPerfSelector: function() {
-                const container = document.getElementById('perf-list-container');
-                container.innerHTML = '';
+                const container = document.getElementById('perf-list-container');                container.innerHTML = '';
                 this.data.lists.forEach(list => {
                     const btn = document.createElement('button');
                     btn.innerText = list.name;
@@ -390,7 +353,8 @@
                 });
             },
 
-            prepareEditor: function(title) {                document.getElementById('editor-title').innerText = title;
+            prepareEditor: function(title) {
+                document.getElementById('editor-title').innerText = title;
                 const ctx = this.elements.editorCtx;
                 ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
                 
@@ -401,11 +365,7 @@
                     img.src = list.zones[this.state.currentZoneIndex];
                 }
                 
-                // IMPORTANT: Réinitialiser les listeners avant d'ajouter
-                this.elements.editorCanvas.onmousedown = null;
-                this.elements.editorCanvas.ontouchstart = null;
-                
-                this.setupDrawingMode(this.elements.editorCanvas, this.elements.editorCtx);
+                this.setupDrawingMode(this.elements.editorCanvas, this.elements.editorCtx, false);
             },
 
             saveZoneDrawing: function() {
@@ -419,27 +379,26 @@
             setupPerformanceMode: function() {
                 const ctx = this.elements.perfCtx;
                 ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
-                this.state.isZoneMode = false;
-                this.updateModeIndicator();
                 
-                // IMPORTANT: Réinitialiser les listeners
-                this.elements.perfCanvas.onmousedown = null;
-                this.elements.perfCanvas.ontouchstart = null;
+                // MODE DÉSACTIVÉ PAR DÉFAUT
+                this.state.isZoneMode = false;
+                this.elements.modeIndicator.innerText = "Mode: DESSIN";
+                this.elements.modeIndicator.style.background = "#eee";
+                this.elements.perfOverlay.classList.remove('active');
+                this.elements.perfCanvas.style.pointerEvents = 'auto';
                 
                 this.setupDrawingMode(this.elements.perfCanvas, this.elements.perfCtx, true);
             },
 
-            initZoneOverlay: function() {
-                this.elements.perfOverlay.innerHTML = '';
+            initZoneOverlay: function() {                this.elements.perfOverlay.innerHTML = '';
                 for (let i = 0; i < 8; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'zone-cell';
-                    cell.dataset.index = i;
                     
-                    // Réponse INSTANTANÉE (touchstart/mousedown, PAS click)
                     cell.addEventListener('touchstart', (e) => {
                         if (this.state.isZoneMode) {
-                            e.preventDefault();                            e.stopPropagation();
+                            e.preventDefault();
+                            e.stopPropagation();
                             this.loadZoneImage(i);
                         }
                     }, { passive: false });
@@ -469,28 +428,20 @@
                 }
             },
 
-            updateModeIndicator: function() {
-                this.state.isZoneMode = !this.state.isZoneMode;
-                this.elements.modeIndicator.innerText = this.state.isZoneMode ? "Mode: ZONES" : "Mode: DESSIN";
-                this.elements.modeIndicator.style.background = this.state.isZoneMode ? "#ffcccc" : "#eee";
-                
-                if (this.state.isZoneMode) {
-                    this.elements.perfOverlay.classList.add('active');
-                    this.elements.perfCanvas.style.pointerEvents = 'none';
-                } else {
-                    this.elements.perfOverlay.classList.remove('active');
-                    this.elements.perfCanvas.style.pointerEvents = 'auto';
-                }
+            // CORRECTION : Cette fonction active le mode (ne toggle plus)
+            activateZoneMode: function() {
+                this.state.isZoneMode = true;
+                this.elements.modeIndicator.innerText = "Mode: ZONES";
+                this.elements.modeIndicator.style.background = "#ffcccc";
+                this.elements.perfOverlay.classList.add('active');
+                this.elements.perfCanvas.style.pointerEvents = 'none';
 
                 // Effet Bordure (1 seconde)
                 document.body.classList.add('flash-border');
                 setTimeout(() => {
-                    document.body.classList.remove('flash-border');
-                }, 1000);
-                
-                console.log("🔄 Mode:", this.state.isZoneMode ? "ZONES" : "DESSIN");            },
+                    document.body.classList.remove('flash-border');                }, 1000);
+            },
 
-            // --- MOTEUR DE DESSIN CORRIGÉ ---
             setupDrawingMode: function(canvas, ctx, isPerformance = false) {
                 let isDrawing = false;
                 let pressTimer = null;
@@ -498,7 +449,6 @@
                 let startY = 0;
                 let hasMoved = false;
 
-                // Fonction pour obtenir les coordonnées correctes
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
                     if (e.touches && e.touches.length > 0) {
@@ -527,25 +477,19 @@
                     ctx.lineCap = 'round';
                     ctx.strokeStyle = this.state.color;
                     
-                    // Long press UNIQUEMENT en mode performance
                     if (isPerformance) {
-                        console.log("⏱️ Timer long press démarré");
                         pressTimer = setTimeout(() => {
-                            console.log("⏱️ Timer écoulé (700ms)");
                             if (!hasMoved && isDrawing) {
-                                console.log("✅ Long press détecté !");
-                                this.updateModeIndicator();
+                                this.activateZoneMode();
                             }
                         }, 700);
-                    }                };
+                    }
+                };
 
                 const draw = (e) => {
                     if (!isDrawing) return;
-                    e.preventDefault();
-                    
+                    e.preventDefault();                    
                     const coords = getCoords(e);
-                    
-                    // Détecter si on a bougé
                     const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
                     if (dist > 10) {
                         hasMoved = true;
@@ -568,25 +512,22 @@
                     ctx.beginPath();
                 };
 
-                // --- ÉVÉNEMENTS SOURIS ---
                 canvas.addEventListener('mousedown', startDraw);
                 canvas.addEventListener('mousemove', draw);
                 canvas.addEventListener('mouseup', endDraw);
                 canvas.addEventListener('mouseleave', endDraw);
 
-                // --- ÉVÉNEMENTS TACTILES ---
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
                 canvas.addEventListener('touchmove', draw, { passive: false });
                 canvas.addEventListener('touchend', endDraw);
                 canvas.addEventListener('touchcancel', endDraw);
-
-                console.log("🎨 Canvas listeners activés");
             },
 
             resizeCanvas: function(canvas) {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-            },            
+            },
+            
             setColor: function(color, btnElement) {
                 this.state.color = color;
                 document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
@@ -596,17 +537,14 @@
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
                     const ctx = type === 'perf' ? this.elements.perfCtx : this.elements.editorCtx;
-                    const canvas = type === 'perf' ? this.elements.perfCanvas : this.elements.editorCanvas;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const canvas = type === 'perf' ? this.elements.perfCanvas : this.elements.editorCanvas;                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                 }
             }
         };
 
-        // Démarrage
         window.onload = function() {
             app.init();
         };
-
     </script>
 </body>
 </html>
