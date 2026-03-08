@@ -1,16 +1,827 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pad Interactif Pro</title>
+    <style>
+        :root {
+            --primary: #333;
+            --bg: #ffffff;
+            --border-flash: #ff0000;
+            --danger: #dc3545;
+            --success: #28a745;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        .view {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: white;
+            z-index: 10;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2rem;            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            cursor: pointer;
+            border-radius: 8px;
+            min-width: 200px;
+            z-index: 100;
+        }
+
+        button:active {
+            background: var(--primary);
+            color: white;
+        }
+
+        button.small {
+            padding: 10px 20px;
+            font-size: 1rem;
+            min-width: auto;
+        }
+
+        button.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        button.danger:active {
+            background: var(--danger);
+            color: white;
+        }
+
+        canvas {
+            touch-action: none;
+            cursor: crosshair;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+        }
+
+        .zone-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr 1fr;
+            pointer-events: none;
+            z-index: 20;        }
+
+        .zone-cell { }
+
+        .zone-overlay.active {
+            pointer-events: auto;
+        }
+
+        body.flash-border {
+            border: 10px solid var(--border-flash);
+            box-sizing: border-box;
+            transition: border 0.1s;
+        }
+
+        .toolbar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+            align-items: center;
+        }
+
+        .editor-toolbar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            align-items: center;
+        }
+
+        .color-picker-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;            position: relative;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-picker-btn .inner-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: black;
+        }
+
+        .color-popup {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 150;
+        }
+
+        .color-popup.active {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+
+        .color-option.selected {
+            border-color: #000;
+            border-width: 3px;
+            transform: scale(1.1);
+        }
+
+        .eraser-btn {
+            width: 50px;
+            height: 50px;            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            background: #cccccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .eraser-btn::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                #cccccc,
+                #cccccc 5px,
+                #999999 5px,
+                #999999 10px
+            );
+            border-radius: 50%;
+        }
+
+        .eraser-btn.active {
+            background: #ffcccc;
+            border-color: var(--danger);
+        }
+
+        .eraser-btn.active::before {
+            background: repeating-linear-gradient(
+                45deg,
+                #ffcccc,
+                #ffcccc 5px,
+                #ff9999 5px,
+                #ff9999 10px
+            );
+        }
+
+        .eraser-btn.flash {
+            animation: eraserFlash 0.5s ease-out;
+        }
+
+        @keyframes eraserFlash {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            50% { transform: scale(1.2); box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.4); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+        .save-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--success);
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .save-btn:active {
+            background: var(--success);
+            color: white;
+        }
+
+        .back-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            cursor: pointer;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .back-btn:active {
+            background: #333;
+            color: white;
+        }
+
+        .list-grid {
+            display: flex;
+            flex-direction: column;
+            width: 80%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .zone-editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;            gap: 10px;
+            width: 90%;
+            max-width: 500px;
+            z-index: 100;
+            padding: 10px;
+        }
+
+        .zone-editor-grid button {
+            min-width: auto;
+            width: 100%;
+            padding: 20px 10px;
+            font-size: 1rem;
+        }
+
+        .list-title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .list-title-container h2 {
+            margin: 0;
+        }
+    </style>
+</head>
 <body>
-    <button onclick="app.navigate('test')">TEST BOUTON</button>
-    
+
+    <div id="view-home" class="view active">
+        <h1>PAD INTERACTIF</h1>
+        <button onclick="app.navigate('view-list-selector-perf')">PERFORMER</button>
+        <button onclick="app.navigate('view-list-manager')">LISTE DES DESSINS</button>
+    </div>
+
+    <div id="view-list-manager" class="view">
+        <h2>Mes Listes</h2>
+        <div class="list-grid" id="manager-list-container"></div>
+        <button class="small" onclick="app.addNewList()">+ Ajouter une liste</button>
+        <button class="small" onclick="app.navigate('view-home')">Retour</button>
+    </div>
+
+    <div id="view-list-detail" class="view">
+        <div class="list-title-container">
+            <button class="back-btn" onclick="app.navigate('view-list-manager')">⬅️</button>
+            <h2 id="detail-list-title">Liste X</h2>
+            <button class="save-btn" onclick="app.navigate('view-list-manager')">💾</button>
+        </div>
+        <button class="small" onclick="app.renameCurrentList()">Renommer la liste</button>
+        <div class="zone-editor-grid" id="detail-zone-container"></div>        <button class="small danger" onclick="app.deleteCurrentList()">🗑️ Supprimer la liste</button>
+    </div>
+
+    <div id="view-list-selector-perf" class="view">
+        <h2>Choisir une liste pour Performer</h2>
+        <div class="list-grid" id="perf-list-container"></div>
+        <button class="small" onclick="app.navigate('view-home')">Annuler</button>
+    </div>
+
+    <div id="view-draw-editor" class="view">
+        <canvas id="editor-canvas"></canvas>
+        <div class="editor-toolbar">
+            <div class="back-btn" onclick="app.navigate('view-list-detail')">⬅️</div>
+            <div class="eraser-btn" id="editor-eraser-btn" onclick="app.toggleEditorEraser()"></div>
+            <div class="color-picker-btn" onclick="app.toggleEditorColorPopup()">
+                <div class="inner-circle" id="editor-current-color-indicator"></div>
+            </div>
+            <div class="color-popup" id="editor-color-popup">
+                <div class="color-option selected" style="background:black" onclick="app.selectEditorColor('black', this)"></div>
+                <div class="color-option" style="background:red" onclick="app.selectEditorColor('red', this)"></div>
+                <div class="color-option" style="background:blue" onclick="app.selectEditorColor('blue', this)"></div>
+                <div class="color-option" style="background:green" onclick="app.selectEditorColor('green', this)"></div>
+                <div class="color-option" style="background:orange" onclick="app.selectEditorColor('orange', this)"></div>
+                <div class="color-option" style="background:purple" onclick="app.selectEditorColor('purple', this)"></div>
+                <div class="color-option" style="background:pink" onclick="app.selectEditorColor('pink', this)"></div>
+                <div class="color-option" style="background:brown" onclick="app.selectEditorColor('brown', this)"></div>
+            </div>
+            <div class="save-btn" onclick="app.saveZoneDrawing()">💾</div>
+        </div>
+    </div>
+
+    <div id="view-performance" class="view">
+        <canvas id="perf-canvas"></canvas>
+        <div class="zone-overlay" id="perf-zone-overlay"></div>
+        
+        <div class="toolbar">
+            <div class="eraser-btn" id="eraser-btn" onclick="app.toggleEraser()"></div>
+            <div class="color-picker-btn" onclick="app.toggleColorPopup()">
+                <div class="inner-circle" id="current-color-indicator"></div>
+            </div>
+            <div class="color-popup" id="color-popup">
+                <div class="color-option selected" style="background:black" onclick="app.selectColor('black', this)"></div>
+                <div class="color-option" style="background:red" onclick="app.selectColor('red', this)"></div>
+                <div class="color-option" style="background:blue" onclick="app.selectColor('blue', this)"></div>
+                <div class="color-option" style="background:green" onclick="app.selectColor('green', this)"></div>
+                <div class="color-option" style="background:orange" onclick="app.selectColor('orange', this)"></div>
+                <div class="color-option" style="background:purple" onclick="app.selectColor('purple', this)"></div>
+                <div class="color-option" style="background:pink" onclick="app.selectColor('pink', this)"></div>
+                <div class="color-option" style="background:brown" onclick="app.selectColor('brown', this)"></div>
+            </div>        </div>
+    </div>
+
     <script>
         const app = {
-            data: { lists: [] },  // ✅ "data:" PRÉSENT
-            navigate: function(view) {
-                alert("ÇA MARCHE ! View: " + view);
+            data: { lists: [] },
+            state: {
+                currentListId: null,
+                currentZoneIndex: null,
+                isZoneMode: false,
+                color: 'black',
+                editorColor: 'black',
+                longPressTimer: null,
+                isEraserMode: false,
+                editorEraserMode: false,
+                strokes: [],
+                zoneImageLoaded: false
+            },
+            elements: {},
+
+            init: function() {
+                this.elements.perfCanvas = document.getElementById('perf-canvas');
+                this.elements.editorCanvas = document.getElementById('editor-canvas');
+                this.elements.perfOverlay = document.getElementById('perf-zone-overlay');
+                this.elements.colorPopup = document.getElementById('color-popup');
+                this.elements.currentColorIndicator = document.getElementById('current-color-indicator');
+                this.elements.eraserBtn = document.getElementById('eraser-btn');
+                this.elements.editorColorPopup = document.getElementById('editor-color-popup');
+                this.elements.editorCurrentColorIndicator = document.getElementById('editor-current-color-indicator');
+                this.elements.editorEraserBtn = document.getElementById('editor-eraser-btn');
+
+                const stored = localStorage.getItem('padApp_data');
+                if (stored) {
+                    this.data.lists = JSON.parse(stored);
+                } else {
+                    this.data.lists = [{ id: Date.now(), name: "Liste 1", zones: Array(8).fill(null) }];
+                    this.saveData();
+                }
+
+                this.resizeCanvas(this.elements.perfCanvas);
+                this.resizeCanvas(this.elements.editorCanvas);
+                this.elements.perfCtx = this.elements.perfCanvas.getContext('2d');
+                this.elements.editorCtx = this.elements.editorCanvas.getContext('2d');
+
+                this.initZoneOverlay();
+                this.renderListManager();
+            },
+
+            saveData: function() {
+                localStorage.setItem('padApp_data', JSON.stringify(this.data.lists));            },
+
+            navigate: function(viewId) {
+                document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+                
+                this.elements.colorPopup.classList.remove('active');
+                this.elements.editorColorPopup.classList.remove('active');
+
+                if (viewId === 'view-list-manager') this.renderListManager();
+                if (viewId === 'view-list-selector-perf') this.renderPerfSelector();
+                if (viewId === 'view-performance') this.setupPerformanceMode();
+                if (viewId === 'view-draw-editor') this.setupEditorMode();
+            },
+
+            renderListManager: function() {
+                const container = document.getElementById('manager-list-container');
+                container.innerHTML = '';
+                this.data.lists.forEach(list => {
+                    const btn = document.createElement('button');
+                    btn.innerText = list.name;
+                    btn.onclick = () => {
+                        this.state.currentListId = list.id;
+                        this.renderListDetail();
+                        this.navigate('view-list-detail');
+                    };
+                    container.appendChild(btn);
+                });
+            },
+
+            addNewList: function() {
+                const newId = Date.now();
+                this.data.lists.push({ id: newId, name: `Liste ${this.data.lists.length + 1}`, zones: Array(8).fill(null) });
+                this.saveData();
+                this.renderListManager();
+            },
+
+            renderListDetail: function() {
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                document.getElementById('detail-list-title').innerText = list.name;
+                const container = document.getElementById('detail-zone-container');
+                container.innerHTML = '';
+                
+                for (let i = 0; i < 8; i++) {
+                    const btn = document.createElement('button');
+                    btn.innerText = `Zone ${i + 1}`;
+                    btn.onclick = () => {
+                        this.state.currentZoneIndex = i;
+                        this.prepareEditor(`Zone ${i + 1}`);
+                        this.navigate('view-draw-editor');                    };
+                    container.appendChild(btn);
+                }
+            },
+
+            deleteCurrentList: function() {
+                if (this.data.lists.length <= 1) {
+                    alert("Impossible de supprimer la dernière liste !");
+                    return;
+                }
+                const confirmed = confirm("⚠️ Supprimer cette liste ? Valider pour supprimer, Annuler pour garder.");
+                if (confirmed) {
+                    this.data.lists = this.data.lists.filter(l => l.id !== this.state.currentListId);
+                    this.saveData();
+                    this.navigate('view-list-manager');
+                }
+            },
+
+            renameCurrentList: function() {
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                const newName = prompt("Nouveau nom :", list.name);
+                if (newName) {
+                    list.name = newName;
+                    this.saveData();
+                    this.renderListDetail();
+                }
+            },
+
+            renderPerfSelector: function() {
+                const container = document.getElementById('perf-list-container');
+                container.innerHTML = '';
+                this.data.lists.forEach(list => {
+                    const btn = document.createElement('button');
+                    btn.innerText = list.name;
+                    btn.onclick = () => {
+                        this.state.currentListId = list.id;
+                        this.navigate('view-performance');
+                    };
+                    container.appendChild(btn);
+                });
+            },
+
+            setupEditorMode: function() {
+                this.state.editorEraserMode = false;
+                this.elements.editorEraserBtn.classList.remove('active');
+                this.elements.editorColorPopup.classList.remove('active');
+            },
+
+            prepareEditor: function(title) {
+                const ctx = this.elements.editorCtx;                ctx.clearRect(0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
+                
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                if (list && list.zones[this.state.currentZoneIndex]) {
+                    const img = new Image();
+                    img.onload = () => ctx.drawImage(img, 0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
+                    img.src = list.zones[this.state.currentZoneIndex];
+                }
+                
+                this.setupDrawingMode(this.elements.editorCanvas, this.elements.editorCtx, false);
+            },
+
+            toggleEditorColorPopup: function() {
+                this.elements.editorColorPopup.classList.toggle('active');
+            },
+
+            selectEditorColor: function(color, btn) {
+                this.state.editorColor = color;
+                this.elements.editorCurrentColorIndicator.style.background = color;
+                document.querySelectorAll('#editor-color-popup .color-option').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.elements.editorColorPopup.classList.remove('active');
+                this.state.editorEraserMode = false;
+                this.elements.editorEraserBtn.classList.remove('active');
+            },
+
+            toggleEditorEraser: function() {
+                this.state.editorEraserMode = !this.state.editorEraserMode;
+                this.elements.editorEraserBtn.classList.toggle('active');
+                if (this.state.editorEraserMode) {
+                    this.elements.editorColorPopup.classList.remove('active');
+                }
+            },
+
+            saveZoneDrawing: function() {
+                const dataURL = this.elements.editorCanvas.toDataURL();
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                list.zones[this.state.currentZoneIndex] = dataURL;
+                this.saveData();
+                this.navigate('view-list-detail');
+            },
+
+            setupPerformanceMode: function() {
+                const ctx = this.elements.perfCtx;
+                ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
+                
+                this.state.isZoneMode = false;
+                this.state.isEraserMode = false;
+                this.state.strokes = [];
+                this.state.zoneImageLoaded = false;                
+                this.elements.perfOverlay.classList.remove('active');
+                this.elements.perfCanvas.style.pointerEvents = 'auto';
+                this.elements.eraserBtn.classList.remove('active');
+                this.elements.colorPopup.classList.remove('active');
+                
+                this.setupDrawingMode(this.elements.perfCanvas, this.elements.perfCtx, true);
+            },
+
+            initZoneOverlay: function() {
+                this.elements.perfOverlay.innerHTML = '';
+                for (let i = 0; i < 8; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'zone-cell';
+                    cell.addEventListener('touchstart', (e) => {
+                        if (this.state.isZoneMode) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.loadZoneImage(i);
+                        }
+                    }, { passive: false });
+                    cell.addEventListener('mousedown', (e) => {
+                        if (this.state.isZoneMode) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            this.loadZoneImage(i);
+                        }
+                    });
+                    this.elements.perfOverlay.appendChild(cell);
+                }
+            },
+
+            loadZoneImage: function(index) {
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                if (list && list.zones[index]) {
+                    const ctx = this.elements.perfCtx;
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
+                        this.state.strokes = [];
+                        this.state.zoneImageLoaded = true;
+                        ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
+                    };
+                    img.src = list.zones[index];
+                }
+                this.deactivateZoneMode();
+            },
+
+            activateZoneMode: function() {
+                this.state.isZoneMode = true;                this.elements.perfOverlay.classList.add('active');
+                this.elements.perfCanvas.style.pointerEvents = 'none';
+                this.elements.eraserBtn.classList.add('flash');
+                setTimeout(() => {
+                    this.elements.eraserBtn.classList.remove('flash');
+                }, 500);
+            },
+
+            deactivateZoneMode: function() {
+                this.state.isZoneMode = false;
+                this.elements.perfOverlay.classList.remove('active');
+                this.elements.perfCanvas.style.pointerEvents = 'auto';
+            },
+
+            toggleColorPopup: function() {
+                this.elements.colorPopup.classList.toggle('active');
+            },
+
+            selectColor: function(color, btn) {
+                this.state.color = color;
+                this.elements.currentColorIndicator.style.background = color;
+                document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.elements.colorPopup.classList.remove('active');
+                this.state.isEraserMode = false;
+                this.elements.eraserBtn.classList.remove('active');
+            },
+
+            toggleEraser: function() {
+                this.state.isEraserMode = !this.state.isEraserMode;
+                this.elements.eraserBtn.classList.toggle('active');
+                if (this.state.isEraserMode) {
+                    this.elements.colorPopup.classList.remove('active');
+                }
+            },
+
+            setupDrawingMode: function(canvas, ctx, isPerformance) {
+                let isDrawing = false;
+                let pressTimer = null;
+                let startX = 0, startY = 0;
+                let hasMoved = false;
+                let currentStroke = null;
+
+                const getCoords = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    if (e.touches && e.touches.length > 0) {
+                        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+                    }
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                };
+                const startDraw = (e) => {
+                    e.preventDefault();
+                    isDrawing = true;
+                    hasMoved = false;
+                    const coords = getCoords(e);
+                    startX = coords.x;
+                    startY = coords.y;
+                    
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    const color = isPerformance ? this.state.color : this.state.editorColor;
+                    
+                    if (eraserMode) {
+                        this.eraseAtPoint(coords, ctx, isPerformance);
+                        return;
+                    }
+                    
+                    currentStroke = { color: color, points: [coords] };
+                    ctx.beginPath();
+                    ctx.moveTo(coords.x, coords.y);
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = color;
+                    
+                    if (isPerformance) {
+                        pressTimer = setTimeout(() => {
+                            if (!hasMoved && isDrawing) {
+                                this.activateZoneMode();
+                            }
+                        }, 700);
+                    }
+                };
+
+                const draw = (e) => {
+                    if (!isDrawing || !currentStroke) return;
+                    e.preventDefault();
+                    const coords = getCoords(e);
+                    const dist = Math.sqrt(Math.pow(coords.x - startX, 2) + Math.pow(coords.y - startY, 2));
+                    if (dist > 10) {
+                        hasMoved = true;
+                        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+                    }
+                    currentStroke.points.push(coords);
+                    ctx.lineTo(coords.x, coords.y);
+                    ctx.stroke();
+                };
+
+                const endDraw = () => {
+                    if (isDrawing && currentStroke && currentStroke.points.length > 0) {                        this.state.strokes.push(currentStroke);
+                    }
+                    isDrawing = false;
+                    currentStroke = null;
+                    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+                    ctx.beginPath();
+                };
+
+                const eraseMove = (e) => {
+                    if (!isDrawing) return;
+                    const eraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
+                    if (!eraserMode) return;
+                    e.preventDefault();
+                    this.eraseAtPoint(getCoords(e), ctx, isPerformance);
+                };
+
+                canvas.addEventListener('mousedown', (e) => { startDraw(e); if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) isDrawing = true; });
+                canvas.addEventListener('mousemove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); });
+                canvas.addEventListener('mouseup', endDraw);
+                canvas.addEventListener('mouseleave', endDraw);
+                canvas.addEventListener('touchstart', startDraw, { passive: false });
+                canvas.addEventListener('touchmove', (e) => { if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) eraseMove(e); else draw(e); }, { passive: false });
+                canvas.addEventListener('touchend', endDraw);
+                canvas.addEventListener('touchcancel', endDraw);
+            },
+
+            eraseAtPoint: function(point, ctx, isPerformance) {
+                for (let i = this.state.strokes.length - 1; i >= 0; i--) {
+                    if (this.isPointNearStroke(point, this.state.strokes[i])) {
+                        this.state.strokes.splice(i, 1);
+                        this.redrawAllStrokes(ctx);
+                        return;
+                    }
+                }
+                if (this.state.zoneImageLoaded && isPerformance) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+            },
+
+            isPointNearStroke: function(point, stroke) {
+                for (let i = 0; i < stroke.points.length - 1; i++) {
+                    const p1 = stroke.points[i], p2 = stroke.points[i + 1];
+                    if (this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y) < 20) return true;
+                }
+                return false;
+            },
+            pointToSegmentDistance: function(px, py, x1, y1, x2, y2) {
+                const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+                const dot = A * C + B * D, lenSq = C * C + D * D;
+                let param = lenSq !== 0 ? dot / lenSq : -1;
+                let xx, yy;
+                if (param < 0) { xx = x1; yy = y1; }
+                else if (param > 1) { xx = x2; yy = y2; }
+                else { xx = x1 + param * C; yy = y1 + param * D; }
+                return Math.sqrt(Math.pow(px - xx, 2) + Math.pow(py - yy, 2));
+            },
+
+            redrawAllStrokes: function(ctx) {
+                ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
+                this.state.strokes.forEach(stroke => {
+                    if (stroke.points.length < 2) return;
+                    ctx.beginPath();
+                    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                    ctx.lineWidth = 5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.strokeStyle = stroke.color;
+                    for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+                    ctx.stroke();
+                });
+            },
+
+            resizeCanvas: function(canvas) {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
             }
         };
+
+        window.onload = function() { app.init(); };
     </script>
 </body>
 </html>
