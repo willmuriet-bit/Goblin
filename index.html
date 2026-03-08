@@ -412,8 +412,7 @@
                 isEraserMode: false,
                 editorEraserMode: false,
                 strokes: [],
-                zoneImageLoaded: false,
-                eraserSegments: []
+                zoneImageLoaded: false
             },
             elements: {},
 
@@ -443,7 +442,7 @@
                 this.initZoneOverlay();
                 this.renderListManager();
                 
-                console.log("✅ Application initialisée avec succès");
+                console.log("✅ Application initialisée");
             },
 
             saveData: function() {
@@ -488,8 +487,8 @@
             },
 
             renderListDetail: function() {
-                const list = this.data.lists.find(l => l.id === this.state.currentListId);                document.getElementById('detail-list-title').innerText = list.name;
-                const container = document.getElementById('detail-zone-container');
+                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+                document.getElementById('detail-list-title').innerText = list.name;                const container = document.getElementById('detail-zone-container');
                 container.innerHTML = '';
                 
                 for (let i = 0; i < 8; i++) {
@@ -537,8 +536,8 @@
                         this.state.currentListId = list.id;
                         this.navigate('view-performance');
                     };
-                    container.appendChild(btn);                });
-            },
+                    container.appendChild(btn);
+                });            },
 
             setupEditorMode: function() {
                 this.state.editorEraserMode = false;
@@ -553,7 +552,7 @@
                 const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[this.state.currentZoneIndex]) {
                     const img = new Image();
-                    img.onload = () => ctx.drawImage(img, 0, 0);
+                    img.onload = () => ctx.drawImage(img, 0, 0, this.elements.editorCanvas.width, this.elements.editorCanvas.height);
                     img.src = list.zones[this.state.currentZoneIndex];
                 }
                 
@@ -586,8 +585,8 @@
                 }
             },
 
-            saveZoneDrawing: function() {                const dataURL = this.elements.editorCanvas.toDataURL();
-                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+            saveZoneDrawing: function() {
+                const dataURL = this.elements.editorCanvas.toDataURL();                const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 list.zones[this.state.currentZoneIndex] = dataURL;
                 this.saveData();
                 this.navigate('view-list-detail');
@@ -601,7 +600,6 @@
                 this.state.isEraserMode = false;
                 this.state.strokes = [];
                 this.state.zoneImageLoaded = false;
-                this.state.eraserSegments = [];
                 
                 this.elements.perfOverlay.classList.remove('active');
                 this.elements.perfCanvas.style.pointerEvents = 'auto';
@@ -636,15 +634,14 @@
                     this.elements.perfOverlay.appendChild(cell);
                 }
             },
-            loadZoneImage: function(index) {
-                const list = this.data.lists.find(l => l.id === this.state.currentListId);
+
+            loadZoneImage: function(index) {                const list = this.data.lists.find(l => l.id === this.state.currentListId);
                 if (list && list.zones[index]) {
                     const ctx = this.elements.perfCtx;
                     const img = new Image();
                     img.onload = () => {
                         ctx.clearRect(0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                         this.state.strokes = [];
-                        this.state.eraserSegments = [];
                         this.state.zoneImageLoaded = true;
                         ctx.drawImage(img, 0, 0, this.elements.perfCanvas.width, this.elements.perfCanvas.height);
                     };
@@ -684,9 +681,9 @@
                 
                 this.elements.colorPopup.classList.remove('active');
                 
-                this.state.isEraserMode = false;                this.elements.eraserBtn.classList.remove('active');
+                this.state.isEraserMode = false;
+                this.elements.eraserBtn.classList.remove('active');
             },
-
             toggleEraser: function() {
                 this.state.isEraserMode = !this.state.isEraserMode;
                 this.elements.eraserBtn.classList.toggle('active');
@@ -703,7 +700,16 @@
                 let startY = 0;
                 let hasMoved = false;
                 let currentStroke = null;
-                let lastPoint = null;
+
+                // Supprimer les anciens listeners pour éviter les conflits
+                canvas.onmousedown = null;
+                canvas.onmousemove = null;
+                canvas.onmouseup = null;
+                canvas.onmouseleave = null;
+                canvas.ontouchstart = null;
+                canvas.ontouchmove = null;
+                canvas.ontouchend = null;
+                canvas.ontouchcancel = null;
 
                 const getCoords = (e) => {
                     const rect = canvas.getBoundingClientRect();
@@ -723,22 +729,24 @@
                     for (let i = 0; i < stroke.points.length - 1; i++) {
                         const p1 = stroke.points[i];
                         const p2 = stroke.points[i + 1];
-                        const dist = pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
+                        const dist = this.pointToSegmentDistance(point.x, point.y, p1.x, p1.y, p2.x, p2.y);
                         if (dist < threshold) {
                             return true;
                         }
-                    }
-                    return false;
+                    }                    return false;
                 };
 
                 const eraseAtPoint = (point) => {
+                    // Effacer les strokes
                     for (let i = this.state.strokes.length - 1; i >= 0; i--) {
-                        if (isPointNearStroke(point, this.state.strokes[i])) {                            this.state.strokes.splice(i, 1);
+                        if (isPointNearStroke(point, this.state.strokes[i])) {
+                            this.state.strokes.splice(i, 1);
                             this.redrawAllStrokes(ctx);
                             return true;
                         }
                     }
                     
+                    // Effacer l'image de zone (gomme pixel)
                     if (this.state.zoneImageLoaded && isPerformance) {
                         const eraseRadius = 20;
                         ctx.globalCompositeOperation = 'destination-out';
@@ -752,47 +760,18 @@
                     return false;
                 };
 
-                const pointToSegmentDistance = (px, py, x1, y1, x2, y2) => {
-                    const A = px - x1;
-                    const B = py - y1;
-                    const C = x2 - x1;
-                    const D = y2 - y1;
-
-                    const dot = A * C + B * D;
-                    const lenSq = C * C + D * D;
-                    let param = -1;
-                    
-                    if (lenSq !== 0) param = dot / lenSq;
-
-                    let xx, yy;
-
-                    if (param < 0) {
-                        xx = x1;
-                        yy = y1;
-                    } else if (param > 1) {
-                        xx = x2;
-                        yy = y2;
-                    } else {
-                        xx = x1 + param * C;
-                        yy = y1 + param * D;
-                    }
-
-                    const dx = px - xx;
-                    const dy = py - yy;
-                    return Math.sqrt(dx * dx + dy * dy);
-                };
-
-                const startDraw = (e) => {                    e.preventDefault();
+                const startDraw = (e) => {
+                    e.preventDefault();
                     isDrawing = true;
                     hasMoved = false;
                     const coords = getCoords(e);
                     startX = coords.x;
                     startY = coords.y;
-                    lastPoint = coords;
                     
                     const currentEraserMode = isPerformance ? this.state.isEraserMode : this.state.editorEraserMode;
                     const currentColor = isPerformance ? this.state.color : this.state.editorColor;
                     
+                    // Mode gomme - fonctionne immédiatement
                     if (currentEraserMode) {
                         eraseAtPoint(coords);
                         isDrawing = false;
@@ -803,14 +782,14 @@
                         color: currentColor,
                         points: [coords]
                     };
-                    
-                    ctx.beginPath();
+                                        ctx.beginPath();
                     ctx.moveTo(coords.x, coords.y);
                     ctx.lineWidth = 5;
                     ctx.lineCap = 'round';
                     ctx.lineJoin = 'round';
                     ctx.strokeStyle = currentColor;
                     
+                    // Long press 700ms pour activer mode zone
                     if (isPerformance) {
                         pressTimer = setTimeout(() => {
                             if (!hasMoved && isDrawing) {
@@ -831,21 +810,12 @@
                         if (pressTimer) {
                             clearTimeout(pressTimer);
                             pressTimer = null;
-                        }                    }
+                        }
+                    }
 
                     currentStroke.points.push(coords);
-                    
-                    if (lastPoint && currentStroke.points.length > 2) {
-                        const midPoint = {
-                            x: (lastPoint.x + coords.x) / 2,
-                            y: (lastPoint.y + coords.y) / 2
-                        };
-                        ctx.quadraticCurveTo(lastPoint.x, lastPoint.y, midPoint.x, midPoint.y);
-                    }
                     ctx.lineTo(coords.x, coords.y);
                     ctx.stroke();
-                    
-                    lastPoint = coords;
                 };
 
                 const endDraw = (e) => {
@@ -854,7 +824,6 @@
                     }
                     isDrawing = false;
                     currentStroke = null;
-                    lastPoint = null;
                     if (pressTimer) {
                         clearTimeout(pressTimer);
                         pressTimer = null;
@@ -862,29 +831,70 @@
                     ctx.beginPath();
                 };
 
-                const eraseMove = (e) => {
-                    if (!isDrawing || !this.state.isEraserMode) return;
+                // Mode gomme continue                const eraseMove = (e) => {
+                    if (!isDrawing || !(isPerformance ? this.state.isEraserMode : this.state.editorEraserMode)) return;
                     e.preventDefault();
                     const coords = getCoords(e);
                     eraseAtPoint(coords);
                 };
 
-                canvas.addEventListener('mousedown', startDraw);
-                canvas.addEventListener('mousemove', draw);
-                canvas.addEventListener('mouseup', endDraw);
-                canvas.addEventListener('mouseleave', endDraw);
-                
+                // Événements souris
                 canvas.addEventListener('mousedown', (e) => {
-                    if (this.state.isEraserMode) {
+                    startDraw(e);
+                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
                         isDrawing = true;
                     }
                 });
-                canvas.addEventListener('mousemove', eraseMove);
-                canvas.addEventListener('mouseup', () => { isDrawing = false; });
+                canvas.addEventListener('mousemove', (e) => {
+                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
+                        eraseMove(e);
+                    } else {
+                        draw(e);
+                    }
+                });
+                canvas.addEventListener('mouseup', endDraw);
+                canvas.addEventListener('mouseleave', endDraw);
+
+                // Événements tactiles
                 canvas.addEventListener('touchstart', startDraw, { passive: false });
-                canvas.addEventListener('touchmove', draw, { passive: false });
+                canvas.addEventListener('touchmove', (e) => {
+                    if (isPerformance ? this.state.isEraserMode : this.state.editorEraserMode) {
+                        eraseMove(e);
+                    } else {
+                        draw(e);
+                    }
+                }, { passive: false });
                 canvas.addEventListener('touchend', endDraw);
                 canvas.addEventListener('touchcancel', endDraw);
+            },
+
+            pointToSegmentDistance: function(px, py, x1, y1, x2, y2) {
+                const A = px - x1;
+                const B = py - y1;
+                const C = x2 - x1;
+                const D = y2 - y1;
+
+                const dot = A * C + B * D;
+                const lenSq = C * C + D * D;
+                let param = -1;
+                
+                if (lenSq !== 0) param = dot / lenSq;
+
+                let xx, yy;
+                if (param < 0) {
+                    xx = x1;
+                    yy = y1;
+                } else if (param > 1) {
+                    xx = x2;
+                    yy = y2;
+                } else {
+                    xx = x1 + param * C;
+                    yy = y1 + param * D;
+                }
+
+                const dx = px - xx;
+                const dy = py - yy;
+                return Math.sqrt(dx * dx + dy * dy);
             },
 
             redrawAllStrokes: function(ctx) {
@@ -919,8 +929,7 @@
                 
                 canvas.style.width = rect.width + 'px';
                 canvas.style.height = rect.height + 'px';
-            },
-            
+            },            
             clearCanvas: function(type) {
                 if (confirm("Effacer tout le dessin ?")) {
                     const ctx = type === 'perf' ? this.elements.perfCtx : this.elements.editorCtx;
@@ -929,7 +938,8 @@
                     if (type === 'perf') {
                         this.state.strokes = [];
                         this.state.zoneImageLoaded = false;
-                    }                }
+                    }
+                }
             }
         };
 
